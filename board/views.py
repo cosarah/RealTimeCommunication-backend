@@ -38,8 +38,6 @@ def login(req: HttpRequest):
         user = User(name=username, password=password, created_time=get_timestamp())
         user.save()
         return request_success({"token": generate_jwt_token(username)})
-    
-    return request_failed(1, "Not implemented", 501)
     # TODO End: [Student] Finish the login function according to the comments above
 
 
