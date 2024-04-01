@@ -115,10 +115,7 @@ def boards(req: HttpRequest):
         else:
             board = Board(user=user, board_state=board_state, board_name=board_name, created_time=get_timestamp())
             board.save()
-            return request_success({"isCreate": True})
-        
-        return request_failed(1, "Not implemented", 501)
-        
+            return request_success({"isCreate": True})        
         # TODO End: [Student] Finish the board view function according to the comments above
         
     else:
@@ -154,7 +151,6 @@ def boards_index(req: HttpRequest, index: any):
             return request_failed(3, "Permission denied", 403)
         Board.objects.get(id=idx).delete()
         return request_success()
-        return request_failed(1, "Not implemented", 501)
         # TODO End: [Student] Finish the board_index view function
     
     else:
