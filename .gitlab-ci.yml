@@ -55,5 +55,6 @@ deploy-dev:
   stage: deploy
   script:
     - deployer dyno replace backend-dev "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$REGISTRY_USER" "$REGISTRY_PWD"
+    - deployer storage create sql-dev
   only:
     - dev
