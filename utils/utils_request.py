@@ -4,8 +4,12 @@ from django.http import JsonResponse
 def request_failed(code, info, status_code=400):
     return JsonResponse({
         "code": code,
-        "info": info
-    }, status=status_code)
+        "info": info,
+        },
+        headers={
+            "Access-Control-Allow-Origin": "*"
+        },
+      status=status_code)
 
 
 def request_success(data={}):
@@ -13,6 +17,9 @@ def request_success(data={}):
         "code": 0,
         "info": "Succeed",
         **data
+    },
+    headers={
+        "Access-Control-Allow-Origin": "*"
     })
 
 
