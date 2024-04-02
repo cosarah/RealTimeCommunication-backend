@@ -19,7 +19,7 @@ build:
 build-dev:
   stage: build
   script:
-    - chmod +x start.sh
+    - chmod +x start.sh # 增加执行权限
     - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
     - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG
     - export BUILD_IMAGE_USERNAME=$CI_REGISTRY_USER
@@ -36,7 +36,7 @@ unit-test:
   script:
     - python manage.py makemigrations board
     - python manage.py migrate
-    - chmod +x test.sh # 这里添加修改权限的命令
+    - chmod +x test.sh # 增加执行权限
     - ./test.sh
   after_script:
     - SUFFIX=$RANDOM
