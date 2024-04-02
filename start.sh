@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 python3 manage.py makemigrations board
 python3 manage.py migrate
 
