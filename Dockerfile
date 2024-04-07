@@ -18,4 +18,4 @@ RUN chmod +x /start.sh
 RUN chown 1000:1000 /start.sh
 USER 1000
 
-CMD ["./start.sh"]
+CMD ["bash","./start.sh"]
