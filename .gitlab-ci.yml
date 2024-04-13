@@ -34,7 +34,7 @@ unit-test:
   before_script:
     - pip install -r requirements.txt
   script:
-    - python manage.py makemigrations board
+    - python manage.py makemigrations user
     - python manage.py migrate
     - chmod +x test.sh # 增加执行权限
     - ./test.sh
