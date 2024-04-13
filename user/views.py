@@ -2,7 +2,8 @@ import json
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.contrib.auth import logout
-from user.models import User, UserProfile, FriendRequest, Friendship
+from user.models import User
+from friend.models import FriendRequest, Friendship
 from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
@@ -29,22 +30,10 @@ def login(req: HttpRequest):
         else:
             return request_failed(2, "Wrong password", 401)
     else: # 否则新建用户（注册）
-        return request_failed(1, "User already exists", 401)
+        return request_failed(1, "User do not exist", 401)
     
     return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
-
-
-# 登出
-def user_logout(request: HttpRequest) -> HttpResponse:
-    if request.method == "POST":
-        # TODO:登出
-        return redirect('/login/')  # 重定向到登录页
-    else:
-        # 如果不是 POST 请求，可以根据需要处理，返回一个错误响应
-        return HttpResponse('Invalid request', status=405)
-# 重定位到登录页
-
 
 # 注册
 def register(req: HttpRequest):
@@ -63,8 +52,32 @@ def register(req: HttpRequest):
     return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
 
+# 获取用户个人信息
+def get_user_info(req: HttpRequest):
+    if req.method != "GET":
+        return BAD_METHOD
+    
+    body = json.loads(req.body.decode("utf-8"))
+    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    user = User.objects.get(name=user_name)
+    user_info = {
+        "userName": user.name,
+        "nickName": user.nick_name,
+        "gender": user.gender,
+
+        "createTime": user.create_time,
+        "phone": user.phone,
+        "email": user.email,
+        "portrait": user.portrait,
+        "introduction": user.introduction,
+        "birthday": user.birthday,
+        "age": user.age,
+        "location": user.location
+    }
+    return request_success(user_info)
 
 # 修改用户个人信息
+### TODO:修改用户密码
 """若为空，则不变，若有输入，则改变"""
 def fix_user_info(req: HttpRequest):
     if req.method != "POST":
@@ -76,6 +89,18 @@ def fix_user_info(req: HttpRequest):
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
     phone = require(body, "phone", "string", err_msg="Missing or error type of [phone]")
     email = require(body, "email", "string", err_msg="Missing or error type of [email]")
+    gender_info = require(body, "gender", "string", err_msg="Missing or error type of [gender]") # gender为枚举类型
+    if gender_info == "男":
+        gender = (1,'男')
+    elif gender_info == "女":
+        gender = (2,'女')
+    else:
+        gender = (0,'未知')
+    portrait = require(body, "portrait", "string", err_msg="Missing or error type of [portrait]")
+    introduction = require(body, "introduction", "string", err_msg="Missing or error type of [introduction]")
+    birthday = require(body, "birthday", "string", err_msg="Missing or error type of [birthday]")
+    age = require(body, "age", "string", err_msg="Missing or error type of [age]")
+    location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     
     # 查找数据库中对应用户，并进行修改
     user = User.objects.get(name=user_name)
@@ -83,8 +108,24 @@ def fix_user_info(req: HttpRequest):
     user.password = password
     user.phone = phone
     user.email = email
+    user.gender = gender
+    user.portrait = portrait
+    user.introduction = introduction
+    user.birthday = birthday
+    user.age = age
+    user.location = location
     user.save()
     return request_success({"token": generate_jwt_token(user_name)})
+
+# 登出
+def user_logout(request: HttpRequest) -> HttpResponse:
+    if request.method == "POST":
+        # TODO:登出
+        return redirect('/login/')  # 重定向到登录页
+    else:
+        return BAD_METHOD
+# 重定位到登录页
+
 
 # 获取好友列表
 def get_friend_list(req: HttpRequest):

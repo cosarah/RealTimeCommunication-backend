@@ -5,6 +5,8 @@ urlpatterns = [
     path('login', views.login), # 登录页 （初始页面）
     path('register', views.register), # 注册页
     path('logout', views.logout), # 退出登录
+    path('user',views.get_user_info),# 获取用户信息
+    path('user/fix', views.fix_user_info), # 修改个人资料
     path('user/friend', views.get_friend_list), # 好友列表页，显示好友列表
     path('user/friend/search/<search_str>', views.get_friend_list), # 搜索好友页，搜索好友
     path('user/friend/<friend_id>', views.get_friend_profile), # 好友资料页，显示好友资料
