@@ -15,7 +15,7 @@ from utils.utils_jwt import generate_jwt_token, check_jwt_token
 @CheckRequire
 def login(req: HttpRequest):
     if req.method != "POST":
-        return BAD_METHOD
+        return BAD_METHOD # request_failed(-3, "Bad method", 405)
     
     # Request body example: {"username": "Ashitemaru", "password": "123456"}
     body = json.loads(req.body.decode("utf-8"))
@@ -29,9 +29,9 @@ def login(req: HttpRequest):
         else:
             return request_failed(2, "Wrong password", 401)
     else: # 否则新建用户（注册）
-        return request_failed(2, "User already exists", 401)
+        return request_failed(1, "User already exists", 401)
     
-    return request_failed(1, "Not implemented", 501)
+    return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
 
 
@@ -60,6 +60,7 @@ def register(req: HttpRequest):
         user = User(name=user_name, password=password)
         user.save()
         return request_success({"token": generate_jwt_token(user_name)})
+    return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
 
 
