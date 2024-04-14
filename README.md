@@ -24,9 +24,7 @@ conda activate django_hw
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
-python manage.py makemigrations user friend message
-python manage.py makemigrations friend
-python manage.py makemigrations message
+python manage.py makemigrations user friend message 
 python manage.py migrate
 
 

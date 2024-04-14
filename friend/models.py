@@ -56,17 +56,24 @@ class FriendRequest(models.Model):
         }
 
     def accept(self): # 接受申请
-        self.status = 1
-        self.save()
-        # 建立好友关系
-        friendship1 = Friendship(from_user=self.to_user, to_user=self.from_user)
-        friendship2 = Friendship(from_user=self.from_user, to_user=self.to_user)
-        friendship1.save()
-        friendship2.save()
+        if self.status == 1: return False # 已经被接受，不能再次接受
+        else: # 未被接受
+            self.status = 1
+            self.save()
+            # 建立好友关系
+            friendship1 = Friendship(from_user=self.to_user, to_user=self.from_user)
+            friendship2 = Friendship(from_user=self.from_user, to_user=self.to_user)
+            friendship1.save()
+            friendship2.save()
+            return True
 
-    def decline(self): # 拒绝申请
-        self.status = 2
-        self.save()
+    def reject(self): # 拒绝申请
+        if self.status == 0:   
+            self.status = 2
+            self.save()
+            return True
+        return False # 已经被接受或拒绝，不能再次拒绝
+    ## Q:拒绝申请之后，还可以再次申请，但不记录申请曾被拒绝？
 
     def _update_message_(self, message):
         self.update_message = message
