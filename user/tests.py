@@ -21,21 +21,25 @@ class LoginTests(TestCase):
         res = self.client.post('/login', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
         self.assertTrue(res.json()['token'].count('.') == 2)
 
     def test_login_existing_user_wrong_password(self):
-        data = {"userName": "Ashitemaru", "password": "wrongpassword"}
-        res = self.client.post('/login', data=data, content_type='application/json')
+        right_data = {"userName": "Ashitemaru", "password": "rightpassword"}
+        wrong_data = {"userName": "Ashitemaru", "password": "wrongpassword"}
+        res = self.client.post('/register', data=right_data, content_type='application/json')
+        res = self.client.post('/login', data=wrong_data, content_type='application/json')
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json()['code'], 2)
+        self.assertEqual(res.json()['info'], 'Wrong password')
 
     def test_login_new_user(self):
         data = {"userName": "NewUser", "password": "123456"}
         res = self.client.post('/login', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.json()['code'], 0)
-        self.assertTrue(res.json()['token'].count('.') == 2)
-        self.assertTrue(User.objects.filter(name="NewUser").exists())
+        self.assertEqual(res.status_code, 401)
+        self.assertEqual(res.json()['code'], 1)
+        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertFalse(User.objects.filter(name="NewUser").exists())
 
 class UserTestCase(TestCase):
     def setUp(self):

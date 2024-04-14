@@ -29,7 +29,7 @@ def login(req: HttpRequest):
         else:
             return request_failed(2, "Wrong password", 401)
     else: # 否则新建用户（注册）
-        return request_failed(1, "User do not exist", 401)
+        return request_failed(1, "User not exist", 401)
     
     return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
@@ -61,7 +61,7 @@ def get_user_info(req: HttpRequest):
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     
     if not User.objects.filter(name=user_name).exists():
-        return request_failed(1, "User do not exist", 401)
+        return request_failed(1, "User not exist", 401)
     
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
@@ -110,7 +110,7 @@ def fix_user_info(req: HttpRequest):
     
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
-        return request_failed(1, "User do not exist", 401)
+        return request_failed(1, "User not exist", 401)
     user = User.objects.get(name=user_name)
     user.nick_name = nick_name
     user.phone = phone
@@ -133,7 +133,7 @@ def close(request: HttpRequest):
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         
         if not User.objects.filter(name=user_name).exists():
-            return request_failed(1, "User do not exist", 401)
+            return request_failed(1, "User not exist", 401)
         user = User.objects.get(name=user_name)
         user.delete()
         return request_success({"info": "User closed","token": generate_jwt_token(user_name)})

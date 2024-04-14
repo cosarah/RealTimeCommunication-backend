@@ -36,10 +36,6 @@ python manage.py migrate
 python3 manage.py runserver
 ```
 
-这会在 `localhost:8000` 开启服务端进行监听网络请求。你可以打开浏览器，访问 http://localhost:8000/startup 来检查服务端是否正常启动。如果正常启动，你会看到含有 "Congratulations! You have successfully installed the requirements. Go ahead!" 的网页。
-
-
-
 ## 代码阅读
 
 快速阅读提供的代码框架，试着回答以下问题：
@@ -102,6 +98,7 @@ python3 manage.py runserver
 
 我们为你撰写的脚本 `test.sh` 包含了进行单元测试与计算覆盖率的功能。如果你只想运行单元测试，你可以运行：
 
+cd /mnt/d/Desktop/code/SEcode/app-backend
 ```bash
 python3 manage.py test
 ```
