@@ -31,7 +31,6 @@ def login(req: HttpRequest):
     else: # 否则新建用户（注册）
         return request_failed(1, "User not exist", 401)
     
-    return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
 
 # 注册
@@ -49,10 +48,10 @@ def register(req: HttpRequest):
         user = User(name=user_name, password=password)
         user.save()
         return request_success({"token": generate_jwt_token(user_name)})
-    return request_failed(-2, "Not implemented", 501)
 # 重定位到聊天列表页
 
 # 获取用户个人信息
+@CheckRequire
 def get_user_info(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
@@ -125,6 +124,7 @@ def fix_user_info(req: HttpRequest):
     return request_success({"token": generate_jwt_token(user_name)})
 
 # 注销
+@CheckRequire
 def close(request: HttpRequest):
     if request.method != "POST":
         return BAD_METHOD
@@ -138,4 +138,3 @@ def close(request: HttpRequest):
         user.delete()
         return request_success({"info": "User closed","token": generate_jwt_token(user_name)})
 # 重定位到登录页
-
