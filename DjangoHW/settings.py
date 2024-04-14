@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-xvv16d@^4vu6-_^8w73_wt+xqf-wfppqevn)_zgye!#7l^6=p$
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # Disable debug mode in production
-DEBUG = True
-# not os.getenv("DEPLOY")
+DEBUG = not os.getenv("DEPLOY")
 
 ALLOWED_HOSTS = [
     '*'  # Insecure
@@ -37,6 +36,8 @@ ALLOWED_HOSTS = [
 
 INSTALLED_APPS = [
     'user',
+    'friend',
+    'message',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',

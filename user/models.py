@@ -13,8 +13,8 @@ from utils.utils_require import MAX_CHAR_LENGTH
 # default 默认值
 # on_delete=models.CASCADE 级联删除
 # unique=True 唯一约束
-# auto_now_add=True 自动添加当前时间
-# auto_now=True 自动更新当前时间
+# auto_now_add=True 创建时间（只读）
+# auto_now=True 更新时间（只读）
 # choices 选项
 
 # 用户表
@@ -42,7 +42,6 @@ class User(models.Model):
         
     def serialize(self): # 序列化
         return {
-            "id": self.id, 
             "name": self.name, 
             "nick_name": self.nick_name,
             "create_time": self.create_time,
@@ -50,7 +49,22 @@ class User(models.Model):
             "birthday": self.birthday,
             "phone": self.phone,
             "email": self.email,
-            "portrait": self.portrait
+            "portrait": self.portrait,
+            "introduction": self.introduction,
+            "gender": self.gender,
+            "age": self.age,
+            "location": self.location
+        }
+    
+    def __info__(self): # 不认识的人可以用这个方法查看用户信息
+        return {
+            "name": self.name,
+            "nick_name": self.nick_name,
+            "introduction": self.introduction,
+            "portrait": self.portrait,
+            "gender": self.gender,
+            "age": self.age,
+            "location": self.location
         }
     
     def __str__(self) -> str:
@@ -58,3 +72,4 @@ class User(models.Model):
     
     ## TODO:数据校验：如邮箱格式、电话号码格式等
     ## TODO:密码加密
+    ## TODO:用户设置
