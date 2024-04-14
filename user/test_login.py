@@ -8,21 +8,21 @@ from user.views import login, register, get_user_info, fix_user_info, close
 from utils.utils_require import MAX_CHAR_LENGTH
 
 # 获取自定义用户模型
-User = get_user_model()
+user_model = get_user_model()
 
 # 测试User模型
 def test_user_model():
     # 测试字段
-    assert User.name.max_length ==  MAX_CHAR_LENGTH # 假设MAX_CHAR_LENGTH为30
-    assert User.nick_name.max_length == MAX_CHAR_LENGTH
-    assert User.password.max_length == MAX_CHAR_LENGTH
-    assert User.phone.max_length == 11
-    assert User.email.max_length == 100
-    assert User.portrait.max_length == 200
-    assert User.introduction.max_length == 250
+    assert user_model.name.max_length ==  MAX_CHAR_LENGTH # 假设MAX_CHAR_LENGTH为30
+    assert user_model.nick_name.max_length == MAX_CHAR_LENGTH
+    assert user_model.password.max_length == MAX_CHAR_LENGTH
+    assert user_model.phone.max_length == 11
+    assert user_model.email.max_length == 100
+    assert user_model.portrait.max_length == 200
+    assert user_model.introduction.max_length == 250
 
     # 测试默认值
-    assert User.GENDER_CHOICES == [(0, '女'), (1, '男'), (2, '未知')]
+    assert user_model.GENDER_CHOICES == [(0, '女'), (1, '男'), (2, '未知')]
 
 # 测试登录视图
 def test_login():

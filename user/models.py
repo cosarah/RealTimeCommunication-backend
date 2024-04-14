@@ -50,7 +50,6 @@ class User(models.Model):
             "phone": self.phone,
             "email": self.email,
             "portrait": self.portrait,
-            "introduction": self.introduction,
             "gender": self.gender,
             "age": self.age,
             "location": self.location
