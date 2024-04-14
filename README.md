@@ -77,7 +77,7 @@ python3 manage.py runserver
 之后，你应该使用如下命令建库：
 
 ```bash
- python3 manage.py makemigrations board && python3 manage.py migrate
+ python3 manage.py makemigrations user friend message && python3 manage.py migrate
 ```
 
 
