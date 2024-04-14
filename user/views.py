@@ -35,6 +35,7 @@ def login(req: HttpRequest):
 # 重定位到聊天列表页
 
 # 注册
+@CheckRequire
 def register(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
@@ -84,6 +85,7 @@ def get_user_info(req: HttpRequest):
 # 修改用户个人信息
 ### TODO:修改用户密码
 """若为空，则不变，若有输入，则改变"""
+@CheckRequire
 def fix_user_info(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
@@ -136,4 +138,4 @@ def close(request: HttpRequest):
         user.delete()
         return request_success({"info": "User closed","token": generate_jwt_token(user_name)})
 # 重定位到登录页
-    
+

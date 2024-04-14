@@ -16,6 +16,18 @@ build:
   only:
     - master
 
+build-dev:
+  stage: build
+  script:
+    - chmod +x start.sh # 增加执行权限
+    - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
+    - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG
+    - export BUILD_IMAGE_USERNAME=$CI_REGISTRY_USER
+    - export BUILD_IMAGE_PASSWORD=$CI_REGISTRY_PASSWORD
+    - deployer build
+  except:
+    - master
+
 unit-test:
   image: python:3.9
   stage: test
@@ -24,7 +36,7 @@ unit-test:
   script:
     - python manage.py makemigrations user
     - python manage.py migrate
-    - chmod +x test.sh # 这里添加修改权限的命令
+    - chmod +x test.sh # 增加执行权限
     - ./test.sh
   after_script:
     - SUFFIX=$RANDOM
@@ -38,3 +50,11 @@ deploy:
     - deployer dyno replace $CI_PROJECT_NAME "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$REGISTRY_USER" "$REGISTRY_PWD"
   only:
     - master
+
+deploy-dev:
+  stage: deploy
+  script:
+    - deployer dyno replace backend-dev "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" "$REGISTRY_USER" "$REGISTRY_PWD"
+    # - deployer storage create sql-dev # 该操作仅能构建一个持久存储，若该名称对应持久存储已存在，则会在deploy环节中报错
+  only:
+    - dev
