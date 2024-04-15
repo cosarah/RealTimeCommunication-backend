@@ -12,7 +12,7 @@ def request_failed(code, info, status_code=400):
       status=status_code)
 
 
-def request_success(data={}):
+def request_success(data={}, status_code=200):
     return JsonResponse({
         "code": 0,
         "info": "Succeed",
@@ -20,7 +20,8 @@ def request_success(data={}):
     },
     headers={
         "Access-Control-Allow-Origin": "*"
-    })
+    },
+    status=status_code)
 
 
 def return_field(obj_dict, field_list):

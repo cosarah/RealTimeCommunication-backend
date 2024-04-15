@@ -53,7 +53,7 @@ def register(req: HttpRequest):
 # 获取用户个人信息
 @CheckRequire
 def get_user_info(req: HttpRequest):
-    if req.method != "GET":
+    if req.method != "POST":
         return BAD_METHOD
     
     body = json.loads(req.body.decode("utf-8"))
@@ -88,7 +88,7 @@ def get_user_info(req: HttpRequest):
 def fix_user_info(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    # 请求体示例：{"userName": "Ashitemaru", "nickname": "Ashitemaru", "password": "123456", "phone": "12345678901", "email": "ashitemaru@gmail.com"}
+    # 请求体示例：{"userName": "Ashitemaru", "nickName": "Ashitemaru", "password": "123456", "phone": "12345678901", "email": "ashitemaru@gmail.com"}
     body = json.loads(req.body.decode("utf-8")) 
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]") # 不可修改
     nick_name = require(body, "nickName", "string", err_msg="Missing or error type of [nickname]")
