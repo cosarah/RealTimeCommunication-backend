@@ -20,7 +20,7 @@ from utils.utils_require import MAX_CHAR_LENGTH
 # 用户表
 class User(models.Model):
     name = models.CharField(max_length=MAX_CHAR_LENGTH, primary_key=True) # 用户名，作为主键
-    nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, null=True, blank=True, verbose_name='昵称') # 昵称，可为空
+    nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default=name, null=True, verbose_name='昵称') # 昵称，可为空
     password = models.CharField(max_length=MAX_CHAR_LENGTH) # 密码 TODO: 加密
     create_time = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
     phone = models.CharField(max_length=11, null=True, verbose_name='手机号码', db_index=True) # 手机号码，可为空

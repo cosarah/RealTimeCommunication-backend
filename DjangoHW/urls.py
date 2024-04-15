@@ -18,6 +18,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('', include("user.urls")),
-    path('friend', include("friend.urls")),
-    path('message', include("message.urls"))
+    path('friend/', include("friend.urls")),
+    path('message/', include("message.urls"))
 ]

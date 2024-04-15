@@ -29,6 +29,7 @@ class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE) # 申请用户
     to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE) # 被申请用户
     update_time = models.DateTimeField(default=timezone.now) # 申请时间
+    update_message = models.CharField(max_length=250, null=True) # 最后一条申请消息
     status = models.CharField(max_length=10, choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined'))) # 申请状态：等待、成功、被拒绝
 
     def from_user_profile(self): # 申请用户信息
@@ -45,17 +46,38 @@ class FriendRequest(models.Model):
             "status": self.status
         }
     
-    def accept(self): # 接受申请
-        self.status = 1
-        self.save()
-        # 建立好友关系
-        friendship1 = Friendship(from_user=self.to_user, to_user=self.from_user)
-        friendship2 = Friendship(from_user=self.from_user, to_user=self.to_user)
-        friendship1.save()
-        friendship2.save()
+    def __str__(self):
+        return{
+            "fromUser": self.from_user_profile(),
+            "toUser": self.to_user_profile(),
+            "updateTime": self.update_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "updateMessage": self.update_message,
+            "status": self.status
+        }
 
-    def decline(self): # 拒绝申请
-        self.status = 2
+    def accept(self): # 接受申请
+        if self.status == 1: return False # 已经被接受，不能再次接受
+        else: # 未被接受
+            self.status = 1
+            self.save()
+            # 建立好友关系
+            friendship1 = Friendship(from_user=self.to_user, to_user=self.from_user)
+            friendship2 = Friendship(from_user=self.from_user, to_user=self.to_user)
+            friendship1.save()
+            friendship2.save()
+            return True
+
+    def reject(self): # 拒绝申请
+        if self.status == 0:   
+            self.status = 2
+            self.save()
+            return True
+        return False # 已经被接受或拒绝，不能再次拒绝
+    ## Q:拒绝申请之后，还可以再次申请，但不记录申请曾被拒绝？
+
+    def _update_message_(self, message):
+        self.update_message = message
+        self.update_time = timezone.now()
         self.save()
 
 

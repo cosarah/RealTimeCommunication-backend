@@ -24,9 +24,7 @@ conda activate django_hw
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
-python manage.py makemigrations user friend message
-python manage.py makemigrations friend
-python manage.py makemigrations message
+python manage.py makemigrations user friend message 
 python manage.py migrate
 
 
@@ -77,7 +75,7 @@ python3 manage.py runserver
 之后，你应该使用如下命令建库：
 
 ```bash
- python3 manage.py makemigrations board && python3 manage.py migrate
+ python3 manage.py makemigrations user friend message && python3 manage.py migrate
 ```
 
 

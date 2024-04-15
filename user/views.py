@@ -84,11 +84,24 @@ def get_user_info(req: HttpRequest):
 # 修改用户个人信息
 ### TODO:修改用户密码
 """若为空，则不变，若有输入，则改变"""
+"""{
+  "userName": "JohnDoe",
+  "nickName": "Johnny",
+  "password": "password123",
+  "phone": "1234567890",
+  "email": "john.doe@example.com",
+  "gender": "male",
+  "portrait": "https://example.com/profile_picture.jpg",
+  "introduction": "Hello, I'm John Doe.",
+  "birthday": "1990-01-01",
+  "age": "34",
+  "location": "New York"
+}"""
 @CheckRequire
 def fix_user_info(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    # 请求体示例：{"userName": "Ashitemaru", "nickName": "Ashitemaru", "password": "123456", "phone": "12345678901", "email": "ashitemaru@gmail.com"}
+
     body = json.loads(req.body.decode("utf-8")) 
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]") # 不可修改
     nick_name = require(body, "nickName", "string", err_msg="Missing or error type of [nickname]")
@@ -111,15 +124,15 @@ def fix_user_info(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return request_failed(1, "User not exist", 401)
     user = User.objects.get(name=user_name)
-    user.nick_name = nick_name
-    user.phone = phone
-    user.email = email
-    user.gender = gender
-    user.portrait = portrait
-    user.introduction = introduction
-    user.birthday = birthday
-    user.age = age
-    user.location = location
+    if nick_name: user.nick_name = nick_name
+    if phone: user.phone = phone
+    if email: user.email = email
+    if gender: user.gender = gender
+    if portrait: user.portrait = portrait
+    if introduction: user.introduction = introduction
+    if birthday: user.birthday = birthday
+    if age: user.age = age
+    if location: user.location = location
     user.save()
     return request_success({"token": generate_jwt_token(user_name)})
 
