@@ -23,8 +23,10 @@ class User(models.Model):
     nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default=name, null=True, verbose_name='昵称') # 昵称，可为空
     password = models.CharField(max_length=MAX_CHAR_LENGTH) # 密码 TODO: 加密
     create_time = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
-    phone = models.CharField(max_length=11, null=True, verbose_name='手机号码', db_index=True) # 手机号码，可为空
-    email = models.EmailField(max_length=100, null=True, verbose_name='邮箱', db_index=True) # 邮箱
+
+    phone = models.CharField(max_length=11, null=True, verbose_name='手机号码', db_index=True, unique=True) # 手机号码，可为空
+    email = models.EmailField(max_length=100, null=True, verbose_name='邮箱', db_index=True, unique=True) # 邮箱
+    
     portrait = models.URLField(null=True, blank=True, verbose_name='头像') # 头像url
     introduction = models.CharField(max_length=250, null=True, blank=True, verbose_name='个人简介') # 个人简介
     birthday = models.DateField(default=None, null=True, verbose_name='生日') # 生日

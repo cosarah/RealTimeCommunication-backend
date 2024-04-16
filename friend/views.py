@@ -75,7 +75,7 @@ def add_friend(req: HttpRequest):
         friend_request.save()
         friend_request_message.save()
         return request_success({})
-############
+
 # 接受好友请求
 def accept_friend_request(req: HttpRequest):
     if req.method != "POST":
@@ -108,8 +108,6 @@ def reject_friend_request(req: HttpRequest):
     else:
         return request_failed(2, "Friend request not found", 403)
     
-    
-
 # 获取好友信息
 def get_friend_profile(req: HttpRequest):
     if req.method != "GET":
@@ -125,6 +123,29 @@ def get_friend_profile(req: HttpRequest):
     else:
         return request_failed(1, "Friend not foound", 403)
 
+# 修改好友备注
+def fix_friend_remark(req: HttpRequest):
+    if req.method != "POST":
+        return BAD_METHOD
+    body = json.loads(req.body.decode("utf-8"))
+    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    remark = require(body, "remark", "string", err_msg="Missing or error type of [remark]")
+    tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
+
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+    if Friendship.objects.filter(from_user=user, to_user=friend).exists():
+        friendship = Friendship.objects.get(from_user=user, to_user=friend)
+        friendship.remark = remark
+        friendship.tag = tag
+        friendship.save()
+        return request_success({})
+    else:
+        return request_failed(1, "Friend not foound", 403)
+
+############
+# 删除好友
 def delete_friend(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
@@ -139,30 +160,85 @@ def delete_friend(req: HttpRequest):
         return request_success({})
     else:
         return request_failed(1, "Friend not foound", 403)
-    return request_success({})
+### TODO:删除好友对聊天信息，好友请求的影响
+### note:这是单方向的删除好友，这会对聊天造成影响，聊天时需要先检验对方是否仍是好友
 
 # 搜索用户
+### 搜索方式：姓名、邮箱、手机号（在修改个人信息中进行唯一性验证）
 def search_user(req: HttpRequest):
-    if req.method != "GET":
-        return BAD_METHOD
-    params = req.GET
-    keyword = require(params, "keyword", "string", err_msg="Missing or error type of [keyword]")
-    if not 0 < len(keyword) <= MAX_CHAR_LENGTH:
-        return request_failed(-1, "Bad param [keyword]", 400)
-    users = User.objects.filter(name__icontains=keyword).order_by('-created_time')
-    return_data = {
-        "users": [
-            return_field(user.serialize(), ["id", "name", "createdTime"]) for user in users
-        ]
-    }
-    return request_success(return_data)
-
-# 获取用户信息
-"""先检验是否为好友"""
-def get_user_profile(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
     body = json.loads(req.body.decode("utf-8"))
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     user = User.objects.get(name=user_name)
-    user_find = User.objects.filter(name=user_name).values_list('id', flat=True)
+
+    keyword = require(body, "keyword", "string", err_msg="Missing or error type of [keyword]")
+    info = require(body, "info", "string", err_msg="Missing or error type of [info]")
+
+    if info == "name": # 按用户名搜索
+        if User.objects.filter(name=keyword).exists():
+            user_find = User.objects.get(name=keyword)
+            if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
+                friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
+                return_data = {
+                    "is_friend": True,
+                    "user_info": friend_profile,
+                }
+            else:
+                return_data = {
+                    "is_friend": False,
+                    "user_info": user_find.__info__(),
+                }
+            return request_success(return_data)
+        else:
+            return request_failed(1, "User not found", 403)
+    
+    elif info == "email": # 按邮箱搜索
+        if User.objects.filter(email=keyword).exists():
+            user_find = User.objects.get(email=keyword)
+            if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
+                friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
+                return_data = {
+                    "is_friend": True,
+                    "user_info": friend_profile,
+                }
+            else:
+                return_data = {
+                    "is_friend": False,
+                    "user_info": user_find.__info__(),
+                }
+            return request_success(return_data)
+        else:
+            return request_failed(1, "User not found", 403)
+    
+    elif info == "phone": # 按手机号搜索
+        if User.objects.filter(phone=keyword).exists():
+            user_find = User.objects.get(phone=keyword)
+            if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
+                friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
+                return_data = {
+                    "is_friend": True,
+                    "user_info": friend_profile,
+                }
+            else:
+                return_data = {
+                    "is_friend": False,
+                    "user_info": user_find.__info__(),
+                }
+            return request_success(return_data)
+        else:
+            return request_failed(1, "User not found", 403)
+    
+    else:
+        return request_failed(1, "Unknown info type", 403)
+
+"""搜索好友应该在好友列表的前端模块中实现"""
+# # 获取用户信息
+# """先检验是否为好友"""
+# def get_user_profile(req: HttpRequest):
+#     if req.method != "GET":
+#         return BAD_METHOD
+#     body = json.loads(req.body.decode("utf-8"))
+#     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+#     user = User.objects.get(name=user_name)
+#     user_find = User.objects.filter(name=user_name).values_list('id', flat=True)

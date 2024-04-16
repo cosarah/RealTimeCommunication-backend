@@ -73,7 +73,7 @@ class FriendRequest(models.Model):
             self.save()
             return True
         return False # 已经被接受或拒绝，不能再次拒绝
-    ## Q:拒绝申请之后，还可以再次申请，但不记录申请曾被拒绝？
+    ## Q:拒绝申请之后，还可以再次申请，但不记录"申请曾被拒绝"这条消息
 
     def _update_message_(self, message):
         self.update_message = message

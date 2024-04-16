@@ -9,7 +9,7 @@ from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # return_field函数根据提供的字段列表过滤出所需数据
-
+### TODO:验证数据格式
 
 # 登录
 @CheckRequire
@@ -83,6 +83,7 @@ def get_user_info(req: HttpRequest):
 
 # 修改用户个人信息
 ### TODO:修改用户密码
+# 姓名、邮箱、手机号（在修改个人信息中进行唯一性验证）
 """若为空，则不变，若有输入，则改变"""
 """{
   "userName": "JohnDoe",
