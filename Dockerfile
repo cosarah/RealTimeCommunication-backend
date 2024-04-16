@@ -10,7 +10,7 @@ RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 
 COPY . .
 
-EXPOSE 79
+EXPOSE 80
 
 COPY start.sh /start.sh
 
