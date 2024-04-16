@@ -35,7 +35,9 @@ ALLOWED_HOSTS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'board',
+    'user',
+    'friend',
+    'message',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
