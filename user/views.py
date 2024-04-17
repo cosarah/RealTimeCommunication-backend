@@ -25,6 +25,7 @@ def login(req: HttpRequest):
     if User.objects.filter(name=user_name).exists(): # 若用户存在
         user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
         if user.password == password: # 判断密码是否正确
+            user.__login__()
             return request_success({"token": generate_jwt_token(user_name)})
         else:
             return request_failed(2, "Wrong password", 401)
@@ -66,20 +67,7 @@ def get_user_info(req: HttpRequest):
     user = User.objects.get(name=user_name)
     
     # 返回用户信息
-    user_info = {
-        "userName": user.name,
-        "nickName": user.nick_name,
-        "gender": user.gender,
-        "createTime": user.create_time,
-        "phone": user.phone,
-        "email": user.email,
-        "portrait": user.portrait,
-        "introduction": user.introduction,
-        "birthday": user.birthday,
-        "age": user.age,
-        "location": user.location
-    }
-    return request_success(user_info)
+    return request_success(user.__all_info__)
 
 # 修改用户个人信息
 ### TODO:修改用户密码

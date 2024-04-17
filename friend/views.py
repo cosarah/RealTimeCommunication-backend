@@ -85,6 +85,7 @@ def accept_friend_request(req: HttpRequest):
     friend_name = require(body, "applierName", "string", err_msg="Missing or error type of [friendName]")
     if FriendRequest.objects.filter(to_user=user_name, from_user=friend_name).exists():
         friend_request = FriendRequest.objects.get(to_user=user_name, from_user=friend_name)
+        print(friend_request.accept())
         if friend_request.accept():
             return request_success({})
         else:
@@ -137,8 +138,8 @@ def fix_friend_remark(req: HttpRequest):
     friend = User.objects.get(name=friend_name)
     if Friendship.objects.filter(from_user=user, to_user=friend).exists():
         friendship = Friendship.objects.get(from_user=user, to_user=friend)
-        friendship.remark = remark
-        friendship.tag = tag
+        if remark != "": friendship.remark = remark
+        if tag != "": friendship.tag = tag
         friendship.save()
         return request_success({})
     else:
@@ -165,15 +166,18 @@ def delete_friend(req: HttpRequest):
 
 # 搜索用户
 ### 搜索方式：姓名、邮箱、手机号（在修改个人信息中进行唯一性验证）
-def search_user(req: HttpRequest):
+def get_user_profile(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    user = User.objects.get(name=user_name)
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        user = User.objects.get(name=user_name)
 
-    keyword = require(body, "keyword", "string", err_msg="Missing or error type of [keyword]")
-    info = require(body, "info", "string", err_msg="Missing or error type of [info]")
+        keyword = require(body, "keyword", "string", err_msg="Missing or error type of [keyword]")
+        info = require(body, "info", "string", err_msg="Missing or error type of [info]")
+    except:
+        return request_failed(0, "Missing or error type of request body", 403)
 
     if info == "name": # 按用户名搜索
         if User.objects.filter(name=keyword).exists():
@@ -233,12 +237,3 @@ def search_user(req: HttpRequest):
         return request_failed(1, "Unknown info type", 403)
 
 """搜索好友应该在好友列表的前端模块中实现"""
-# # 获取用户信息
-# """先检验是否为好友"""
-# def get_user_profile(req: HttpRequest):
-#     if req.method != "GET":
-#         return BAD_METHOD
-#     body = json.loads(req.body.decode("utf-8"))
-#     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-#     user = User.objects.get(name=user_name)
-#     user_find = User.objects.filter(name=user_name).values_list('id', flat=True)

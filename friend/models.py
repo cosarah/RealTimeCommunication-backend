@@ -6,7 +6,7 @@ from django.utils import timezone
 # Create your models here.
 # 好友关系表
 class Friendship(models.Model):
-    from_user = models.ForeignKey(User, related_name='friendship_creator', on_delete=models.CASCADE, db_index=True) # 该用户的所有好友
+    from_user = models.ForeignKey(User, related_name='me', on_delete=models.CASCADE, db_index=True) # 该用户
     to_user = models.ForeignKey(User, related_name='friend', on_delete=models.CASCADE, db_index=True) # 好友用户
     remark = models.CharField(max_length=100, null=True, help_text='好友备注') # 好友备注
     tag = models.CharField(max_length=100, null=True) # 用户标签
@@ -34,16 +34,12 @@ class FriendRequest(models.Model):
 
     def from_user_profile(self): # 申请用户信息
         return {
-            "fromUserInfo": self.from_user.__info__(),
-            "applyTime": self.update_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "status": self.status
+            self.from_user.__info__(),
         }
     
     def to_user_profile(self): # 被申请用户信息
         return {
-            "toUserInfo": self.to_user.__info__(),
-            "applyTime": self.update_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "status": self.status
+            self.to_user.__info__(),
         }
     
     def __str__(self):
@@ -55,8 +51,9 @@ class FriendRequest(models.Model):
             "status": self.status
         }
 
-    def accept(self): # 接受申请
-        if self.status == 1: return False # 已经被接受，不能再次接受
+    def accept(self)->bool: # 接受申请
+        if int(self.status) == 1:  # 在数据库中存储的时为str类型
+            return False # 已经被接受，不能再次接受
         else: # 未被接受
             self.status = 1
             self.save()
