@@ -34,3 +34,4 @@ def return_field(obj_dict, field_list):
     }
 
 BAD_METHOD = request_failed(-3, "Bad method", 405)
+BAD_PARAMS = request_failed(-4, "Bad parameters", 400)

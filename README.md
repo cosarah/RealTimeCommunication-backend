@@ -1,17 +1,6 @@
-## Django 小作业
-
-By c7w
-
-2024 春《软件工程》课程 Django 小作业
-
-## API 文档
-
-在完成本文档时，请参照 [API 文档](https://thuse-course.github.io/course-index/handout/api/).
-
+## Django 后端
 
 ## 环境配置
-
-我们使用 Linux（或 WSL）环境与 `Python=3.9` 配置本次作业，推荐你使用 `conda` 创建一个新的虚拟环境：
 
 ```bash
 conda create -n django_hw python=3.9 -y
@@ -24,12 +13,12 @@ conda activate django_hw
 pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ```
 
+### 数据库
+
 python manage.py makemigrations user friend message 
 python manage.py migrate
 
-
-然后，你可以运行如下指令检查环境配置是否成功：
-
+### 本地运行
 ```bash
 python3 manage.py runserver
 ```

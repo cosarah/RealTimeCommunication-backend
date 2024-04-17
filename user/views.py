@@ -90,25 +90,27 @@ def get_user_info(req: HttpRequest):
 def fix_user_info(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
+    try:
+        body = json.loads(req.body.decode("utf-8")) 
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]") # 不可修改
+        nick_name = require(body, "nickName", "string", err_msg="Missing or error type of [nickname]")
+        phone = require(body, "phone", "string", err_msg="Missing or error type of [phone]")
+        email = require(body, "email", "string", err_msg="Missing or error type of [email]")
+        gender_info = require(body, "gender", "string", err_msg="Missing or error type of [gender]") # gender为枚举类型
+        if gender_info == "male" or gender_info == "男":
+            gender = 1
+        elif gender_info == "female" or gender_info == "女":
+            gender = 2
+        else:
+            gender = 0
+        portrait = require(body, "portrait", "string", err_msg="Missing or error type of [portrait]")
+        introduction = require(body, "introduction", "string", err_msg="Missing or error type of [introduction]")
+        birthday = require(body, "birthday", "string", err_msg="Missing or error type of [birthday]")
+        age = require(body, "age", "string", err_msg="Missing or error type of [age]")
+        location = require(body, "location", "string", err_msg="Missing or error type of [location]")
+    except:
+        return request_failed(0, "Missing or error type of [userName]", 400)
 
-    body = json.loads(req.body.decode("utf-8")) 
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]") # 不可修改
-    nick_name = require(body, "nickName", "string", err_msg="Missing or error type of [nickname]")
-    phone = require(body, "phone", "string", err_msg="Missing or error type of [phone]")
-    email = require(body, "email", "string", err_msg="Missing or error type of [email]")
-    gender_info = require(body, "gender", "string", err_msg="Missing or error type of [gender]") # gender为枚举类型
-    if gender_info == "male" or gender_info == "男":
-        gender = 1
-    elif gender_info == "female" or gender_info == "女":
-        gender = 2
-    else:
-        gender = 0
-    portrait = require(body, "portrait", "string", err_msg="Missing or error type of [portrait]")
-    introduction = require(body, "introduction", "string", err_msg="Missing or error type of [introduction]")
-    birthday = require(body, "birthday", "string", err_msg="Missing or error type of [birthday]")
-    age = require(body, "age", "string", err_msg="Missing or error type of [age]")
-    location = require(body, "location", "string", err_msg="Missing or error type of [location]")
-    
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
         return request_failed(1, "User not exist", 401)

@@ -4,7 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage
-from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, request_failed, request_success, return_field
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -15,8 +15,12 @@ def get_friend_list(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
     
-    body = json.loads(req.body.decode("utf-8")) 
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    try:
+        body = json.loads(req.body.decode("utf-8")) 
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    except:
+        return BAD_PARAMS
+    
     user = User.objects.get(name=user_name)
     friend_list = Friendship.objects.filter(from_user=user)
 
@@ -31,8 +35,11 @@ def get_friend_list(req: HttpRequest):
 def get_friend_request_list(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    except:
+        return BAD_PARAMS
     user = User.objects.get(name=user_name)
     friend_requests = FriendRequest.objects.filter(to_user=user)
     friend_applys = FriendRequest.objects.filter(from_user=user)
@@ -51,13 +58,15 @@ def add_friend(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
     # 格式：{"userName": "123", "friendName": "Sam", "message": "Hi"}
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+        apply_message = require(body, "message", "string", err_msg="Missing or error type of [message]")
+    except:
+        return BAD_PARAMS 
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-
-    apply_message = require(body, "message", "string", err_msg="Missing or error type of [message]")
     if apply_message == "": apply_message = "你好，我是" + user.nick_name + "，很高兴认识你！" # 缺省值
 
     if Friendship.objects.filter(from_user=user, to_user=friend).exists(): # 已经是好友
@@ -80,9 +89,14 @@ def add_friend(req: HttpRequest):
 def accept_friend_request(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "applierName", "string", err_msg="Missing or error type of [friendName]")
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "applierName", "string", err_msg="Missing or error type of [friendName]")
+    except:
+        return BAD_PARAMS
+    
     if FriendRequest.objects.filter(to_user=user_name, from_user=friend_name).exists():
         friend_request = FriendRequest.objects.get(to_user=user_name, from_user=friend_name)
         print(friend_request.accept())
@@ -97,9 +111,14 @@ def accept_friend_request(req: HttpRequest):
 def reject_friend_request(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "applierName", "string", err_msg="Missing or error type of [friendName]")
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "applierName", "string", err_msg="Missing or error type of [friendName]")
+    except:
+        return BAD_PARAMS
+        
     if FriendRequest.objects.filter(to_user=user_name, from_user=friend_name).exists():
         friend_request = FriendRequest.objects.get(to_user=user_name, from_user=friend_name)
         if friend_request.reject():
@@ -113,9 +132,14 @@ def reject_friend_request(req: HttpRequest):
 def get_friend_profile(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    except:
+        return BAD_PARAMS    
+    
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
@@ -128,12 +152,16 @@ def get_friend_profile(req: HttpRequest):
 def fix_friend_remark(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
-    remark = require(body, "remark", "string", err_msg="Missing or error type of [remark]")
-    tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
-
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+        remark = require(body, "remark", "string", err_msg="Missing or error type of [remark]")
+        tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
+    except:
+        return BAD_PARAMS
+    
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     if Friendship.objects.filter(from_user=user, to_user=friend).exists():
@@ -150,9 +178,14 @@ def fix_friend_remark(req: HttpRequest):
 def delete_friend(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+    except:
+        return BAD_PARAMS 
+    
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     
@@ -169,16 +202,16 @@ def delete_friend(req: HttpRequest):
 def get_user_profile(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
+    
     try:
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-        user = User.objects.get(name=user_name)
-
         keyword = require(body, "keyword", "string", err_msg="Missing or error type of [keyword]")
         info = require(body, "info", "string", err_msg="Missing or error type of [info]")
     except:
-        return request_failed(0, "Missing or error type of request body", 403)
-
+        return request_failed(0, "Missing or error format of request body", 403)
+    
+    user = User.objects.get(name=user_name)
     if info == "name": # 按用户名搜索
         if User.objects.filter(name=keyword).exists():
             user_find = User.objects.get(name=keyword)
