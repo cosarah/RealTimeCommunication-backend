@@ -3,7 +3,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship
-from utils.utils_request import BAD_METHOD, request_failed, request_success, return_field
+from utils.utils_request import request_failed, request_success, return_field
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -54,20 +55,21 @@ def register(req: HttpRequest):
 # 获取用户个人信息
 @CheckRequire
 def get_user_info(req: HttpRequest):
-    if req.method != "POST":
+    if req.method != "GET":
         return BAD_METHOD
     
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    try:
+        user_name = req.GET.get('userName', None)
+    except:
+        return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists():
         return request_failed(1, "User not exist", 401)
     
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
-    
     # 返回用户信息
-    return request_success(user.__all_info__)
+    return request_success(user.__all_info__())
 
 # 修改用户个人信息
 ### TODO:修改用户密码

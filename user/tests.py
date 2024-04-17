@@ -7,7 +7,7 @@ import hmac
 import time
 import json
 import base64
-
+from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
 
 # -*- coding: UTF-8 -*-
@@ -86,7 +86,7 @@ class InfoTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        res = self.client.get('/user', data=data, content_type='application/json')
+        res = self.client.post('/user', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
@@ -110,7 +110,7 @@ class InfoTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
-        res = self.client.post('/user', data=data, content_type='application/json')
+        res = self.client.get('/user', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -123,15 +123,19 @@ class InfoTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()["token"], generate_jwt_token("Ashitemaru"))
         
         res = self.client.post('/user/fix', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertEqual(res.json()["token"], generate_jwt_token("Ashitemaru"))
 
-        res = self.client.post('/user', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 200)
+
+        res = self.client.get('/user', data={"userName": "Ashitemaru"}, content_type='application/json')
+ 
         self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertEqual(res.json()["userName"], "Ashitemaru")
         self.assertEqual(res.json()["nickName"], "Ashitemaru")
@@ -208,5 +212,5 @@ class UserTestCase(TestCase):
 
     def test_user_serialize(self):
         """测试 User 模型的 serialize 方法"""
-        serialized_data = self.user.serialize()
+        serialized_data = self.user.__all_info__()
         self.assertEqual(serialized_data['email'], 'test@example.com')

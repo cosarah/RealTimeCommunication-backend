@@ -4,7 +4,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, request_failed, request_success, return_field
+from utils.utils_request import request_failed, request_success, return_field
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -70,7 +71,7 @@ def add_friend(req: HttpRequest):
     if apply_message == "": apply_message = "你好，我是" + user.nick_name + "，很高兴认识你！" # 缺省值
 
     if Friendship.objects.filter(from_user=user, to_user=friend).exists(): # 已经是好友
-        return request_failed(1, "Already friends", 403)
+        return ALREADY_EXIST
     
     if FriendRequest.objects.filter(from_user=friend, to_user=user).exists(): # 已经存在
         friend_request = FriendRequest.objects.get(from_user=friend, to_user=user)
@@ -146,7 +147,7 @@ def get_friend_profile(req: HttpRequest):
     if friendship:
         return request_success(friendship.friend_profile())
     else:
-        return request_failed(1, "Friend not foound", 403)
+        return request_failed(1, "Friend not found", 403)
 
 # 修改好友备注
 def fix_friend_remark(req: HttpRequest):
@@ -171,7 +172,7 @@ def fix_friend_remark(req: HttpRequest):
         friendship.save()
         return request_success({})
     else:
-        return request_failed(1, "Friend not foound", 403)
+        return request_failed(1, "Friend not found", 403)
 
 ############
 # 删除好友
@@ -193,7 +194,7 @@ def delete_friend(req: HttpRequest):
         Friendship.objects.filter(from_user=user, to_user=friend).delete()
         return request_success({})
     else:
-        return request_failed(1, "Friend not foound", 403)
+        return request_failed(1, "Friend not found", 403)
 ### TODO:删除好友对聊天信息，好友请求的影响
 ### note:这是单方向的删除好友，这会对聊天造成影响，聊天时需要先检验对方是否仍是好友
 
