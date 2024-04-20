@@ -36,11 +36,11 @@ class User(models.Model):
     introduction = models.CharField(max_length=250, null=True, blank=True, verbose_name='个人简介') # 个人简介
     birthday = models.DateField(default=None, null=True, verbose_name='生日') # 生日
     GENDER_CHOICES = ( # 性别
-        (0, '女'),
+        (0, '未知'),
         (1, '男'),
-        (2, '未知')
+        (2, '女')
     )
-    gender = models.IntegerField(choices=GENDER_CHOICES, default=2, verbose_name='性别')
+    gender = models.IntegerField(choices=GENDER_CHOICES, default=0, verbose_name='性别')
     age = models.IntegerField(null=True, blank=True, verbose_name='年龄') # 年龄，可为空
     location = models.CharField(max_length=100, null=True, blank=True, verbose_name='所在地') # 所在地，可为空
 
