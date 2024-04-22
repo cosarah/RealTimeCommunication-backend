@@ -10,4 +10,5 @@ urlpatterns = [
     path('fix/', views.fix_friend_remark), #修改好友备注
     path('request/', views.get_friend_request_list), # 显示好友请求列表
     path('search/', views.get_user_profile), # 获取用户资料/搜索用户
+    path('group/', views.get_friend_group_list), # 获取群组列表
 ]

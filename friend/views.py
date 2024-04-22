@@ -3,7 +3,7 @@ import json
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
-from friend.models import FriendRequest, Friendship, FriendRequestMessage
+from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserTag
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -271,3 +271,18 @@ def get_user_profile(req: HttpRequest):
         return request_failed(1, "Unknown info type", 403)
 
 """搜索好友应该在好友列表的前端模块中实现"""
+
+def get_friend_group_list(req: HttpRequest):
+    if req.method != "GET":
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    except:
+        return BAD_PARAMS
+    
+    user = User.objects.get(name=user_name)
+    tags = user.tag_set.all()
+    friend_groups = {tag:tag.__friends_info__() for tag in tags}
+    return request_success(friend_groups)

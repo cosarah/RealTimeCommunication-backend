@@ -9,16 +9,16 @@ class Friendship(models.Model):
     from_user = models.ForeignKey(User, related_name='me', on_delete=models.CASCADE, db_index=True) # 该用户
     to_user = models.ForeignKey(User, related_name='friend', on_delete=models.CASCADE, db_index=True) # 好友用户
     remark = models.CharField(max_length=100, null=True, help_text='好友备注') # 好友备注
-    tag = models.CharField(max_length=100, null=True) # 用户标签
+    tags = models.ManyToManyField("UserTag", related_name="friendships", blank=True, help_text="标签") # 用户标签
     created = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
     
     def friend_profile(self): # 好友信息
         return {
             "toUser": self.to_user.name,
             "remark": self.remark,
-            "tag": self.tag,
+            "tag": self.tags,
             "created": self.created.strftime("%Y-%m-%d %H:%M:%S"),
-            "friend_info": self.to_user.serialize()
+            "friend_info": self.to_user.__friend_info__()
         }
     class Meta: # 确保(from_user, to_user)有序对是唯一的
         unique_together = ('from_user', 'to_user')
@@ -83,3 +83,15 @@ class FriendRequestMessage(models.Model):
     request = models.ForeignKey(FriendRequest, related_name='messages', on_delete=models.CASCADE) # 好友申请
     message = models.CharField(max_length=250) # 消息内容
     message_time = models.DateTimeField(default=timezone.now) # 消息时间
+
+class UserTag(models.Model): # 用户定义的标签集
+    name = models.CharField(max_length=100) # 标签名称
+    user = models.ForeignKey(User, related_name='user_tag', on_delete=models.CASCADE) # 标签所属用户
+    freindships = models.ManyToManyField(Friendship, related_name='friendship_tag') # 标签下的好友
+    def __str__(self):
+        return self.name
+    def friendships(self): # 标签下的好友
+        return self.freindships.all()
+    
+    def __friends_info__(self): # 标签下的好友信息
+        return [friendship.friend_profile() for friendship in self.freindships.all()]
