@@ -8,18 +8,48 @@ from django.utils import timezone
 class Friendship(models.Model):
     from_user = models.ForeignKey(User, related_name='me', on_delete=models.CASCADE, db_index=True) # 该用户
     to_user = models.ForeignKey(User, related_name='friend', on_delete=models.CASCADE, db_index=True) # 好友用户
-    remark = models.CharField(max_length=100, null=True, help_text='好友备注') # 好友备注
+    alias = models.CharField(max_length=100, null=True, help_text='好友备注名') # 好友备注
     tags = models.ManyToManyField("UserTag", related_name="friendships", blank=True, help_text="标签") # 用户标签
-    created = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
+    description = models.CharField(max_length=250, null=True, help_text='好友描述') # 好友描述
+    created_time = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
     
     def friend_profile(self): # 好友信息
         return {
-            "toUser": self.to_user.name,
-            "remark": self.remark,
-            "tag": self.tags,
-            "created": self.created.strftime("%Y-%m-%d %H:%M:%S"),
-            "friend_info": self.to_user.__friend_info__()
+            "friend_info": self.to_user.__friend_info__(),
+            "alias": self.alias,
+            "description": self.description,
+            "tag": [tag.__str__() for tag in self.tags.all()],
+            "created_time": self.created_time.strftime("%Y-%m-%d %H:%M:%S")
         }
+    def set_alias(self, alias): # 修改备注
+        self.alias = alias
+        self.save()
+    def set_description(self, description): # 修改描述
+        self.description = description
+        self.save()
+
+    def add_tag(self, tag): # 修改标签
+        existing_tags = self.from_user.user_tag.all()
+        if tag not in existing_tags:
+            new_tag = UserTag(name=tag, user=self.from_user)
+            new_tag.save()
+            self.tags.add(new_tag)
+            self.save()
+            new_tag.add_friendship(self)
+        else:
+            return False
+        
+    def delete_tag(self, tag): # 删除标签
+        existing_tags = self.from_user.user_tag.all()
+        if tag in existing_tags:
+            del_tag = UserTag.objects.get(name=tag, user=self.from_user)
+            self.tags.remove(del_tag)
+            self.save()
+            del_tag.remove_friendship(self)
+        else:
+            return False
+    
+
     class Meta: # 确保(from_user, to_user)有序对是唯一的
         unique_together = ('from_user', 'to_user')
 
@@ -28,26 +58,22 @@ class Friendship(models.Model):
 class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE) # 申请用户
     to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE) # 被申请用户
-    update_time = models.DateTimeField(default=timezone.now) # 申请时间
-    update_message = models.CharField(max_length=250, null=True) # 最后一条申请消息
-    status = models.CharField(max_length=10, choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined'))) # 申请状态：等待、成功、被拒绝
+    updated_time = models.DateTimeField(default=timezone.now) # 申请时间
+    updated_message = models.CharField(max_length=250, null=True) # 最后一条申请消息
+    status = models.IntegerField(choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined')), default=0) # 申请状态：等待、成功、被拒绝
 
-    def from_user_profile(self): # 申请用户信息
-        return {
-            self.from_user.__info__(),
-        }
+    def from_user_profile(self)->dict: # 申请用户信息
+        return self.from_user.__info__(),
     
-    def to_user_profile(self): # 被申请用户信息
-        return {
-            self.to_user.__info__(),
-        }
-    
-    def __str__(self):
+    def to_user_profile(self)->dict: # 被申请用户信息
+        return self.to_user.__info__(),
+        
+    def serialize(self):
         return{
-            "fromUser": self.from_user_profile(),
-            "toUser": self.to_user_profile(),
-            "updateTime": self.update_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "updateMessage": self.update_message,
+            "fromUser": self.from_user.__info__(),
+            "toUser": self.to_user.__info__(),
+            "updatedTime": self.updated_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "updatedMessage": self.updated_message,
             "status": self.status
         }
 
@@ -64,17 +90,19 @@ class FriendRequest(models.Model):
             friendship2.save()
             return True
 
-    def reject(self): # 拒绝申请
-        if self.status == 0:   
+    def reject(self)->bool: # 拒绝申请
+        if int(self.status) == 0:   
             self.status = 2
             self.save()
             return True
         return False # 已经被接受或拒绝，不能再次拒绝
     ## Q:拒绝申请之后，还可以再次申请，但不记录"申请曾被拒绝"这条消息
 
-    def _update_message_(self, message):
-        self.update_message = message
-        self.update_time = timezone.now()
+    def update_message(self, message):
+        if message == "":
+            message = "你好，我是"+self.from_user.name+"，很高兴认识你。"
+        self.updated_message = message
+        self.updated_time = timezone.now()
         self.save()
 
 
@@ -87,11 +115,20 @@ class FriendRequestMessage(models.Model):
 class UserTag(models.Model): # 用户定义的标签集
     name = models.CharField(max_length=100) # 标签名称
     user = models.ForeignKey(User, related_name='user_tag', on_delete=models.CASCADE) # 标签所属用户
-    freindships = models.ManyToManyField(Friendship, related_name='friendship_tag') # 标签下的好友
+    friendships = models.ManyToManyField(Friendship, related_name='friendship_tag', blank=True) # 标签下的好友
     def __str__(self):
         return self.name
     def friendships(self): # 标签下的好友
-        return self.freindships.all()
+        return self.friendships.all()
     
     def __friends_info__(self): # 标签下的好友信息
-        return [friendship.friend_profile() for friendship in self.freindships.all()]
+        return [friendship.friend_profile() for friendship in self.friendships.all()]
+    
+    def add_friendship(self, friendship): # 添加好友关系到标签
+        self.friendships.add(friendship)
+        self.save()
+    
+    def remove_friendship(self, friendship): # 从标签移除好友关系
+        self.friendships.remove(friendship)
+        self.save()
+        
