@@ -33,6 +33,12 @@ class User(models.Model):
     # 个性化信息
     nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default=name, null=True, verbose_name='昵称') # 昵称，可为空
     portrait = models.URLField(null=True, blank=True, verbose_name='头像') # 头像url
+    PORTRAIT_CHOICES = ( # 头像类型
+        (0, '空'),
+        (-1, '自定义'),
+        (1, '默认1'), (2, '默认2'), (3, '默认3'), (4, '默认4'), (5, '默认5'), (6, '默认6'), (7, '默认7'), (8, '默认8'), (9, '默认9'), (10, '默认10')
+    )
+    portrait_type = models.IntegerField(choices=PORTRAIT_CHOICES, default=0, verbose_name='头像类型') # 头像类型
     introduction = models.CharField(max_length=250, null=True, blank=True, verbose_name='个人简介') # 个人简介
     birthday = models.DateField(default=None, null=True, verbose_name='生日') # 生日
     GENDER_CHOICES = ( # 性别
@@ -55,6 +61,7 @@ class User(models.Model):
             "createTime": self.create_time,
             "introduction": self.introduction,
             "birthday": self.birthday,
+            "portraitType": self.portrait_type,
             "portrait": self.portrait,
             "gender": self.gender,
             "age": self.age,

@@ -15,11 +15,11 @@ class Friendship(models.Model):
     
     def friend_profile(self): # 好友信息
         return {
-            "friend_info": self.to_user.__friend_info__(),
+            "friendInfo": self.to_user.__friend_info__(),
             "alias": self.alias,
             "description": self.description,
             "tag": [tag.__str__() for tag in self.tags.all()],
-            "created_time": self.created_time.strftime("%Y-%m-%d %H:%M:%S")
+            "createdTime": self.created_time.strftime("%Y-%m-%d %H:%M:%S")
         }
     def set_alias(self, alias): # 修改备注
         self.alias = alias
