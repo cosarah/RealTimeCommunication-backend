@@ -9,7 +9,7 @@ class Friendship(models.Model):
     from_user = models.ForeignKey(User, related_name='me', on_delete=models.CASCADE, db_index=True) # 该用户
     to_user = models.ForeignKey(User, related_name='friend', on_delete=models.CASCADE, db_index=True) # 好友用户
     alias = models.CharField(max_length=100, null=True, help_text='好友备注名') # 好友备注
-    tags = models.ManyToManyField("UserTag", related_name="friendships", blank=True, help_text="标签") # 用户标签
+    tags = models.ManyToManyField("UserTag", related_name="tag_friendship", blank=True, help_text="标签") # 用户标签
     description = models.CharField(max_length=250, null=True, help_text='好友描述') # 好友描述
     created_time = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
     
@@ -28,6 +28,9 @@ class Friendship(models.Model):
         self.description = description
         self.save()
 
+    def get_tags(self):
+        return [tag.__str__() for tag in self.tags.all()]
+
     def add_tag(self, tag): # 修改标签
         existing_tags = self.from_user.user_tag.all()
         if tag not in existing_tags:
@@ -36,7 +39,7 @@ class Friendship(models.Model):
             self.tags.add(new_tag)
             self.save()
             new_tag.add_friendship(self)
-        else:
+        else: # 标签已存在
             return False
         
     def delete_tag(self, tag): # 删除标签
@@ -118,11 +121,12 @@ class UserTag(models.Model): # 用户定义的标签集
     friendships = models.ManyToManyField(Friendship, related_name='friendship_tag', blank=True) # 标签下的好友
     def __str__(self):
         return self.name
-    def friendships(self): # 标签下的好友
+    def get_tag_friends(self): # 标签下的好友
         return self.friendships.all()
     
     def __friends_info__(self): # 标签下的好友信息
-        return [friendship.friend_profile() for friendship in self.friendships.all()]
+        print(self.tag_friendship.all())
+        return [friendship.friend_profile() for friendship in self.tag_friendship.all()]
     
     def add_friendship(self, friendship): # 添加好友关系到标签
         self.friendships.add(friendship)

@@ -13,5 +13,6 @@ urlpatterns = [
     path('fix',views.fix_friend_profile), #修改好友资料
     path('request/', views.get_friend_request_list), # 显示好友请求列表
     path('search/', views.get_user_profile), # 获取用户资料/搜索用户
-    path('group/', views.get_friend_group_list), # 获取群组列表
+    path('tags/', views.get_friend_all_tag_list), # 获取标签好友分类
+    path('tag', views.get_friend_list_by_tag) # 获取某标签的好友
 ]

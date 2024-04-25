@@ -23,6 +23,7 @@ def get_friend_list(req: HttpRequest):
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
+    
     user = User.objects.get(name=user_name)
     friend_list = Friendship.objects.filter(from_user=user)
 
@@ -292,13 +293,13 @@ def get_user_profile(req: HttpRequest):
             if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
                 friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
                 return_data = {
-                    "is_friend": True,
-                    "friendship_info": friend_profile,
+                    "isFriend": True,
+                    "friendshipInfo": friend_profile,
                 }
             else:
                 return_data = {
-                    "is_friend": False,
-                    "friendship_info": user_find.__info__(),
+                    "isFriend": False,
+                    "friendshipInfo": user_find.__info__(),
                 }
             return request_success(return_data)
         else:
@@ -310,13 +311,13 @@ def get_user_profile(req: HttpRequest):
             if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
                 friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
                 return_data = {
-                    "is_friend": True,
-                    "friendship_info": friend_profile,
+                    "isFriend": True,
+                    "friendshipInfo": friend_profile,
                 }
             else:
                 return_data = {
-                    "is_friend": False,
-                    "friendship_info": user_find.__info__(),
+                    "isFriend": False,
+                    "friendshipInfo": user_find.__info__(),
                 }
             return request_success(return_data)
         else:
@@ -328,13 +329,13 @@ def get_user_profile(req: HttpRequest):
             if Friendship.objects.filter(from_user=user, to_user=user_find).exists():
                 friend_profile = Friendship.objects.get(from_user=user, to_user=user_find).friend_profile()
                 return_data = {
-                    "is_friend": True,
-                    "friendship_info": friend_profile,
+                    "isFriend": True,
+                    "friendshipInfo": friend_profile,
                 }
             else:
                 return_data = {
-                    "is_friend": False,
-                    "friendship_info": user_find.__info__(),
+                    "isFriend": False,
+                    "friendshipInfo": user_find.__info__(),
                 }
             return request_success(return_data)
         else:
@@ -345,17 +346,43 @@ def get_user_profile(req: HttpRequest):
 
 """搜索好友应该在好友列表的前端模块中实现"""
 
-def get_friend_group_list(req: HttpRequest):
+def get_friend_all_tag_list(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
     
     try:
-        body = json.loads(req.body.decode("utf-8"))
-        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        user_name = req.GET.get("userName")
     except:
         return BAD_PARAMS
     
-    user = User.objects.get(name=user_name)
-    tags = user.user_tag.all()
-    friend_groups = {tag:tag.__friends_info__() for tag in tags}
-    return request_success(friend_groups)
+    if User.objects.filter(name=user_name).exists():
+        user = User.objects.get(name=user_name)
+        friend_groups = {tag.__str__():tag.__friends_info__() for tag in user.user_tag.all()}
+        return request_success(friend_groups)
+    else:
+        return USER_NOT_FOUND
+    
+def get_friend_list_by_tag(req: HttpRequest):
+    if req.method != "GET":
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get("userName")
+        tag_name = req.GET.get("tagName")
+    except:
+        return BAD_PARAMS
+    
+    if User.objects.filter(name=user_name).exists():
+        user = User.objects.get(name=user_name)
+        if user.user_tag.filter(name=tag_name).exists():
+            tag = user.user_tag.get(name=tag_name)
+            friend_list = tag.tag_friendship.all()
+            return_data = {
+                "tagName": tag.name,
+                "friendList": [friend.friend_profile() for friend in friend_list]
+            }
+            return request_success(return_data)
+        else:
+            return request_failed(1, "Tag not found", 403)
+    else:
+        return USER_NOT_FOUND
