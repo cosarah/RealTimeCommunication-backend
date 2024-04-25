@@ -15,8 +15,5 @@ EXPOSE 80
 COPY start.sh /start.sh
 
 RUN chmod +x /start.sh
-RUN chown 1000:1000 /start.sh
-RUN chmod 664 db.sqlite3         
-USER 1000
 
 CMD ["bash","./start.sh"]
