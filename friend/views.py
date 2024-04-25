@@ -235,19 +235,22 @@ def fix_friend_profile(req:HttpRequest):
         return BAD_PARAMS
     
     user = User.objects.get(name=user_name)
-    friend = User.objects.get(name=friend_name)
-    if Friendship.objects.filter(from_user=user, to_user=friend).exists():
-        friendship = Friendship.objects.get(from_user=user, to_user=friend)
-        if alias:
-            friendship.set_alias(alias)
-        if description: 
-            friendship.set_description(description)
-        if tag:
-            friendship.add_tag(tag)
-            
-        return request_success()
+    if User.objects.filter(name=friend_name).exists():
+        friend = User.objects.get(name=friend_name)
+        if Friendship.objects.filter(from_user=user, to_user=friend).exists():
+            friendship = Friendship.objects.get(from_user=user, to_user=friend)
+            if alias:
+                friendship.set_alias(alias)
+            if description: 
+                friendship.set_description(description)
+            if tag:
+                friendship.add_tag(tag)
+                
+            return request_success()
+        else:
+            return request_failed(1, "Friend not found", 403)
     else:
-        return request_failed(1, "Friend not found", 403)
+        return USER_NOT_FOUND
 
 ############
 # 删除好友

@@ -32,8 +32,7 @@ class Friendship(models.Model):
         return [tag.__str__() for tag in self.tags.all()]
 
     def add_tag(self, tag): # 修改标签
-        existing_tags = self.from_user.user_tag.all()
-        if tag not in existing_tags:
+        if not UserTag.objects.filter(name=tag, user=self.from_user).exists():
             new_tag = UserTag(name=tag, user=self.from_user)
             new_tag.save()
             self.tags.add(new_tag)
