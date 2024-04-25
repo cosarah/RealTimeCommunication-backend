@@ -1,4 +1,6 @@
 #!/bin/sh
+chmod 664 db.sqlite3         # Sets the correct permissions
+
 python3 manage.py makemigrations user
 python3 manage.py migrate
 
