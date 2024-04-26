@@ -1,7 +1,7 @@
 from django.db import models
 from user.models import User
 from django.utils import timezone
-
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 # 好友关系表
@@ -34,7 +34,7 @@ class Friendship(models.Model):
     def get_tags(self):
         return [tag.__str__() for tag in self.tags.all()]
 
-    def add_tag(self, tag): # 添加标签
+    def add_friend_tag(self, tag): # 添加标签
         if not UserTag.objects.filter(name=tag, user=self.from_user).exists():
             new_tag = UserTag(name=tag, user=self.from_user)
             new_tag.save()
@@ -45,11 +45,10 @@ class Friendship(models.Model):
         else: # 标签已存在
             return False
         
-    def delete_tag(self, tag): # 删除标签
-
+    def delete_friend_tag(self, tag): # 删除标签
         if UserTag.objects.filter(name=tag, user=self.from_user).exists():
             del_tag = UserTag.objects.get(name=tag, user=self.from_user)
-            del_tag.delete()
+            del_tag.remove_friendship(self)
             self.tags.remove(del_tag)
             self.save()
             return True
@@ -68,6 +67,13 @@ class FriendRequest(models.Model):
     updated_time = models.DateTimeField(default=timezone.now) # 申请时间
     updated_message = models.CharField(max_length=250, null=True) # 最后一条申请消息
     status = models.IntegerField(choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined')), default=0) # 申请状态：等待、成功、被拒绝
+    class Meta:
+        unique_together = ('from_user', 'to_user') # 同一对用户只能有一个申请
+    
+    def clean(self):
+        # 检查是否存在相反方向的请求
+        if FriendRequest.objects.filter(from_user=self.to_user, to_user=self.from_user).exists():
+            raise ValidationError('A friend request from the opposite direction already exists.')
 
     def from_user_profile(self)->dict: # 申请用户信息
         return_data = self.from_user.__info__()
@@ -128,7 +134,6 @@ class UserTag(models.Model): # 用户定义的标签集
         return self.friendships.all()
     
     def __friends_info__(self): # 标签下的好友信息
-        print(self.tag_friendship.all())
         return [friendship.friend_profile() for friendship in self.tag_friendship.all()]
     
     def add_friendship(self, friendship): # 添加好友关系到标签
@@ -139,3 +144,5 @@ class UserTag(models.Model): # 用户定义的标签集
         self.friendships.remove(friendship)
         self.save()
         
+    class Meta:
+        unique_together = ('name', 'user') # 某个用户的标签是唯一的

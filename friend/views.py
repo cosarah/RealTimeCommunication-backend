@@ -28,7 +28,7 @@ def get_friend_list(req: HttpRequest):
     friend_list = Friendship.objects.filter(from_user=user)
 
     return_data = {
-        "friends_info": [
+        "friends": [
             friend.friend_profile() for friend in friend_list
         ]
     }
@@ -233,7 +233,7 @@ def add_friend_tag(req: HttpRequest):
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     
     if tag != "":
-        if friendship.add_tag(tag):
+        if friendship.add_friend_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag already exists", 403)
@@ -265,12 +265,12 @@ def delete_friend_tag(req: HttpRequest):
     
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     if tag != "":
-        if friendship.delete_tag(tag):
+        if friendship.delete_friend_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag not exist", 403)
     else:
-        return request_success(2, "Tag empty", 403) 
+        return request_failed(3, "Tag empty", 403) 
 
 
 def fix_friend_profile(req:HttpRequest):
@@ -304,7 +304,9 @@ def fix_friend_profile(req:HttpRequest):
     if description: 
         friendship.set_description(description)
     if tag:
-        friendship.add_tag(tag)
+        friendship.delete_friend_tag(tag)
+        friendship.add_friend_tag(tag)
+
     return request_success()
         
 def get_user_tag(req: HttpRequest):
@@ -453,7 +455,7 @@ def get_friend_list_by_tag(req: HttpRequest):
             friend_list = tag.tag_friendship.all()
             return_data = {
                 "tagName": tag.name,
-                "friendList": [friend.friend_profile() for friend in friend_list]
+                "friends": [friend.friend_profile() for friend in friend_list]
             }
             return request_success(return_data)
         else:
