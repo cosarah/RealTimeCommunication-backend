@@ -73,7 +73,7 @@ def add_friend(req: HttpRequest):
     if FriendRequest.objects.filter(from_user=friend, to_user=user).exists(): # 对方申请已经存在
         return request_failed(1, "Please go to accept friend request", 403)
     if FriendRequest.objects.filter(from_user=user, to_user=friend).exists(): # 好友已经存在，支持继续发送申请
-        friend_request = FriendRequest.objects.get(from_user=friend, to_user=user)
+        friend_request = FriendRequest.objects.get(from_user=user, to_user=friend)
         friend_request_message = FriendRequestMessage(request=friend_request, message=apply_message)
         friend_request.update_message(apply_message) # 更新最新申请消息
         friend_request_message.save() 
