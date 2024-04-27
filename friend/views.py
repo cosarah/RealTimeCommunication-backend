@@ -159,17 +159,23 @@ def fix_friend_alias(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-    if Friendship.objects.filter(from_user=user, to_user=friend).exists():
-        friendship = Friendship.objects.get(from_user=user, to_user=friend)
-        if alias != "": 
-            friendship.set_alias(alias)
-            return request_success(status_code=203)
-        else: request_success(info="Alias not changed")
 
-    else:
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
         return request_failed(1, "Friend not found", 403)
+    
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    if alias != "": 
+        friendship.set_alias(alias)
+        return request_success()
+    else: 
+        request_success(info="Alias not changed")
+        
 
 def fix_friend_description(req: HttpRequest):
     if req.method != "POST":
@@ -183,19 +189,26 @@ def fix_friend_description(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-    if Friendship.objects.filter(from_user=user, to_user=friend).exists():
-        friendship = Friendship.objects.get(from_user=user, to_user=friend)
-        if description != "": 
-            friendship.set_description(description)
-        else: 
-            request_success(info="Description not changed")
-        return request_success({})
-    else:
-        return request_failed(1, "Friend not found", 403)
 
-def fix_friend_tag(req: HttpRequest):
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
+        return request_failed(1, "Friend not found", 403)
+    
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    if description != "": 
+        friendship.set_description(description)
+        return request_success()
+    else: 
+        request_success(info="Description not changed")
+    
+        
+
+def add_friend_tag(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
     
@@ -207,18 +220,58 @@ def fix_friend_tag(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-    if Friendship.objects.filter(from_user=user, to_user=friend).exists():
-        friendship = Friendship.objects.get(from_user=user, to_user=friend)
-        if tag != "":
-            friendship.add_tag(tag)
-        else:
-            return request_success(info="Tag not changed")
-            
-        return request_success({})
-    else:
+
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
         return request_failed(1, "Friend not found", 403)
+    
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    
+    if tag != "":
+        if friendship.add_tag(tag):
+            return request_success()
+        else:
+            return request_failed(2, "Tag already exists", 403)
+    else:
+        return request_failed(3, "Tag empty", 403) # 之后可以改成不合规格式
+
+
+def delete_friend_tag(req: HttpRequest):
+    if req.method != "POST":
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+        tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
+        return request_failed(1, "Friend not found", 403)
+    
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    if tag != "":
+        if friendship.delete_tag(tag):
+            return request_success()
+        else:
+            return request_failed(2, "Tag not exist", 403)
+    else:
+        return request_success(2, "Tag empty", 403) 
+
 
 def fix_friend_profile(req:HttpRequest):
     if req.method != "POST":
@@ -234,23 +287,41 @@ def fix_friend_profile(req:HttpRequest):
     except:
         return BAD_PARAMS
     
-    user = User.objects.get(name=user_name)
-    if User.objects.filter(name=friend_name).exists():
-        friend = User.objects.get(name=friend_name)
-        if Friendship.objects.filter(from_user=user, to_user=friend).exists():
-            friendship = Friendship.objects.get(from_user=user, to_user=friend)
-            if alias:
-                friendship.set_alias(alias)
-            if description: 
-                friendship.set_description(description)
-            if tag:
-                friendship.add_tag(tag)
-                
-            return request_success()
-        else:
-            return request_failed(1, "Friend not found", 403)
-    else:
+    if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
+        return request_failed(1, "Friend not found", 403)
+
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    if alias:
+        friendship.set_alias(alias)
+    if description: 
+        friendship.set_description(description)
+    if tag:
+        friendship.add_tag(tag)
+    return request_success()
+        
+def get_user_tag(req: HttpRequest):
+    if req.method != "GET":
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get("userName")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    return_data = {"tags":[tag.__str__() for tag in user.user_tag.all()]}
+    return request_success(return_data)
 
 ############
 # 删除好友

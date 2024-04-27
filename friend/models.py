@@ -14,13 +14,16 @@ class Friendship(models.Model):
     created_time = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
     
     def friend_profile(self): # 好友信息
-        return {
-            "friendInfo": self.to_user.__friend_info__(),
+        return_data = {
             "alias": self.alias,
             "description": self.description,
             "tag": [tag.__str__() for tag in self.tags.all()],
             "createdTime": self.created_time.strftime("%Y-%m-%d %H:%M:%S")
         }
+        for key,value in self.to_user.__friend_info__().items():
+            return_data[key] = value
+        return return_data
+    
     def set_alias(self, alias): # 修改备注
         self.alias = alias
         self.save()
@@ -31,23 +34,25 @@ class Friendship(models.Model):
     def get_tags(self):
         return [tag.__str__() for tag in self.tags.all()]
 
-    def add_tag(self, tag): # 修改标签
+    def add_tag(self, tag): # 添加标签
         if not UserTag.objects.filter(name=tag, user=self.from_user).exists():
             new_tag = UserTag(name=tag, user=self.from_user)
             new_tag.save()
             self.tags.add(new_tag)
             self.save()
             new_tag.add_friendship(self)
+            return True
         else: # 标签已存在
             return False
         
     def delete_tag(self, tag): # 删除标签
-        existing_tags = self.from_user.user_tag.all()
-        if tag in existing_tags:
+
+        if UserTag.objects.filter(name=tag, user=self.from_user).exists():
             del_tag = UserTag.objects.get(name=tag, user=self.from_user)
+            del_tag.delete()
             self.tags.remove(del_tag)
             self.save()
-            del_tag.remove_friendship(self)
+            return True
         else:
             return False
     

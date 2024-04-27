@@ -7,10 +7,14 @@ urlpatterns = [
     path('accept/', views.accept_friend_request), # 接受好友请求
     path('reject/', views.reject_friend_request), # 拒绝好友请求
     path('profile/', views.get_friend_profile), # 获取好友资料
-    path('fix/alias/', views.fix_friend_alias), #修改好友备注
-    path('fix/tag/', views.fix_friend_tag), #修改好友标签
-    path('fix/description/', views.fix_friend_description), #修改好友描述
-    path('fix/',views.fix_friend_profile), #修改好友资料
+    path('fix/alias/', views.fix_friend_alias), # 修改好友备注
+    path('fix/description/', views.fix_friend_description), # 修改好友描述
+    path('fix/',views.fix_friend_profile), # 修改好友资料（包括备注、描述、标签，若标签存在，则删除之，若不存在，则添加之）
+    path('fix/tag/add/', views.add_friend_tag), # 添加好友标签
+    path('fix/tag/delete/', views.delete_friend_tag), # 删除好友标签
+    
+    path('tag/',views.get_user_tag), # 获取好友标签列表
+    
     path('request/', views.get_friend_request_list), # 显示好友请求列表
     path('search/', views.get_user_profile), # 获取用户资料/搜索用户
     path('tags/', views.get_friend_all_tag_list), # 获取标签好友分类
