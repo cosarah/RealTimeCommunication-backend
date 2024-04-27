@@ -70,19 +70,18 @@ class FriendRequest(models.Model):
     status = models.IntegerField(choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined')), default=0) # 申请状态：等待、成功、被拒绝
 
     def from_user_profile(self)->dict: # 申请用户信息
-        return self.from_user.__info__(),
+        return_data = self.from_user.__info__()
+        return_data['updatedTime'] = self.updated_time.strftime("%Y-%m-%d %H:%M:%S")
+        return_data['updatedMessage'] = self.updated_message
+        return_data['status'] = self.status
+        return return_data
     
     def to_user_profile(self)->dict: # 被申请用户信息
-        return self.to_user.__info__(),
-        
-    def serialize(self):
-        return{
-            "fromUser": self.from_user.__info__(),
-            "toUser": self.to_user.__info__(),
-            "updatedTime": self.updated_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "updatedMessage": self.updated_message,
-            "status": self.status
-        }
+        return_data = self.to_user.__info__()
+        return_data['updatedTime'] = self.updated_time.strftime("%Y-%m-%d %H:%M:%S")
+        return_data['updatedMessage'] = self.updated_message
+        return_data['status'] = self.status
+        return return_data
 
     def accept(self)->bool: # 接受申请
         if int(self.status) == 1:  # 在数据库中存储的时为str类型

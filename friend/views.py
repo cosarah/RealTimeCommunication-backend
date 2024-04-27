@@ -45,8 +45,8 @@ def get_friend_request_list(req: HttpRequest):
     user = User.objects.get(name=user_name)
     friend_requests = FriendRequest.objects.filter(to_user=user)
     friend_applys = FriendRequest.objects.filter(from_user=user)
-    requests_list = [return_field(friend_request.serialize(), ["fromUser","updatedTime","updatedMessage","status"]) for friend_request in friend_requests]
-    applys_list = [return_field(friend_apply.serialize(), ["toUser","updatedTime","updatedMessage","status"]) for friend_apply in friend_applys]
+    requests_list = [friend_request.from_user_profile() for friend_request in friend_requests]
+    applys_list = [friend_apply.to_user_profile() for friend_apply in friend_applys]
     return_data = {
         "requests": requests_list,
         "applys": applys_list
