@@ -19,8 +19,6 @@ class Chat(models.Model):
     id = models.BigAutoField(primary_key=True) # 主键
     title = models.CharField(max_length=255, blank=True, null=True) # 对于群聊，有标题
     is_group = models.BooleanField(default=False) # False 表示私聊，True 表示群聊
-    participants = models.ManyToManyField(User, through='Participant')
-    participants_num = models.IntegerField(default=0) # 参与人数
     last_message = models.ForeignKey('Message', on_delete=models.SET_NULL, null=True, related_name='last_message_of_chat') # 最后一条消息
     created_at = models.DateTimeField(auto_now_add=True) # 创建时间
     updated_at = models.DateTimeField(auto_now=True) # 最新消息时间
