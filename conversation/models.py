@@ -20,11 +20,19 @@ class PrivateMessage(models.Model):
     sender = models.ForeignKey(User, related_name='sender', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
     created_time = models.DateTimeField(auto_now_add=True)
-    quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='quote')
+    quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='private_quotes')
     conversation = models.ForeignKey(PrivateConversation, on_delete=models.CASCADE, related_name='messages')
     is_read = models.BooleanField(default=False) # 是否已读
     class Meta:
         ordering = ['-created_time']
+
+    def read(self):
+        if self.is_read:
+            return False
+        else:
+            self.is_read = True
+            self.save()
+            return True
 
 class UserPrivateMessageReicever(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='private_message_receiver')

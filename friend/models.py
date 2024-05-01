@@ -65,7 +65,7 @@ class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE) # 申请用户
     to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE) # 被申请用户
     updated_time = models.DateTimeField(default=timezone.now) # 申请时间
-    updated_message = models.CharField(max_length=250) # 最后一条申请消息
+    updated_message = models.CharField(max_length=250,default="", help_text='最后一条申请消息') # 最后一条申请消息
     status = models.IntegerField(choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined')), default=0) # 申请状态：等待、成功、被拒绝
     class Meta:
         unique_together = ('from_user', 'to_user') # 同一对用户只能有一个申请

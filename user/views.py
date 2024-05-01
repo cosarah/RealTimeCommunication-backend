@@ -23,15 +23,15 @@ def login(req: HttpRequest):
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
 
-    if User.objects.filter(name=user_name).exists(): # 若用户存在
-        user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
-        if user.password == password: # 判断密码是否正确
-            user.__login__()
-            return request_success({"token": generate_jwt_token(user_name)})
-        else:
-            return request_failed(2, "Wrong password", 401)
-    else: # 否则新建用户（注册）
-        return request_failed(1, "User not exist", 401)
+    if not User.objects.filter(name=user_name).exists(): # 若用户不存在
+        return USER_NOT_FOUND
+
+    user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
+    if user.password == password: # 判断密码是否正确
+        user.login()
+        return request_success({"token": generate_jwt_token(user_name)})
+    else:
+        return request_failed(2, "Wrong password", 401)
     
 # 重定位到聊天列表页
 
@@ -139,8 +139,24 @@ def close(request: HttpRequest):
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         
         if not User.objects.filter(name=user_name).exists():
-            return request_failed(1, "User not exist", 401)
+            return USER_NOT_FOUND
         user = User.objects.get(name=user_name)
         user.delete()
         return request_success({"info": "User closed","token": generate_jwt_token(user_name)})
 # 重定位到登录页
+
+
+def logout(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    user.logout()

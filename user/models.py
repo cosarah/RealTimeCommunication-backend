@@ -105,12 +105,12 @@ class User(models.Model):
     def __str__(self) -> str:
         return self.name
     
-    def __logout__(self):
+    def logout(self):
         self.is_online = False
         self.logout_time = timezone.now()
         self.save()
 
-    def __login__(self):
+    def login(self):
         self.is_online = True
         self.save()
 

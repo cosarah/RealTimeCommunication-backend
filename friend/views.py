@@ -67,6 +67,8 @@ def add_friend(req: HttpRequest):
         return BAD_PARAMS 
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
+    if apply_message == "":
+        apply_message = "你好，我是"+user.name+"，很高兴认识你。"
 
     if Friendship.objects.filter(from_user=user, to_user=friend).exists(): # 已经是好友
         return ALREADY_EXIST
