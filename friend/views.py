@@ -70,7 +70,7 @@ def add_friend(req: HttpRequest):
 
     if Friendship.objects.filter(from_user=user, to_user=friend).exists(): # 已经是好友
         return ALREADY_EXIST
-    if FriendRequest.objects.filter(from_user=friend, to_user=user).exists(): # 对方申请已经存在
+    if FriendRequest.objects.filter(from_user=user, to_user=friend).exists(): # 对方申请已经存在
         return request_failed(1, "Please go to accept friend request", 403)
     if FriendRequest.objects.filter(from_user=user, to_user=friend).exists(): # 好友已经存在，支持继续发送申请
         friend_request = FriendRequest.objects.get(from_user=user, to_user=friend)
