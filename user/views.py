@@ -99,9 +99,9 @@ def fix_user_info(req: HttpRequest):
         phone = require(body, "phone", "string", err_msg="Missing or error type of [phone]")
         email = require(body, "email", "string", err_msg="Missing or error type of [email]")
         gender_info = require(body, "gender", "string", err_msg="Missing or error type of [gender]") # gender为枚举类型
-        if gender_info == "male" or gender_info == "男":
+        if gender_info == "male":
             gender = 1
-        elif gender_info == "female" or gender_info == "女":
+        elif gender_info == "female":
             gender = 2
         else:
             gender = 0
