@@ -33,14 +33,20 @@ class User(models.Model):
     # 个性化信息
     nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default=name, null=True, verbose_name='昵称') # 昵称，可为空
     portrait = models.URLField(null=True, blank=True, verbose_name='头像') # 头像url
+    PORTRAIT_CHOICES = ( # 头像类型
+        (0, '空'),
+        (-1, '自定义'),
+        (1, '默认1'), (2, '默认2'), (3, '默认3'), (4, '默认4'), (5, '默认5'), (6, '默认6'), (7, '默认7'), (8, '默认8'), (9, '默认9'), (10, '默认10')
+    )
+    portrait_type = models.IntegerField(choices=PORTRAIT_CHOICES, default=0, verbose_name='头像类型') # 头像类型
     introduction = models.CharField(max_length=250, null=True, blank=True, verbose_name='个人简介') # 个人简介
     birthday = models.DateField(default=None, null=True, verbose_name='生日') # 生日
     GENDER_CHOICES = ( # 性别
-        (0, '女'),
+        (0, '未知'),
         (1, '男'),
-        (2, '未知')
+        (2, '女')
     )
-    gender = models.IntegerField(choices=GENDER_CHOICES, default=2, verbose_name='性别')
+    gender = models.IntegerField(choices=GENDER_CHOICES, default=0, verbose_name='性别')
     age = models.IntegerField(null=True, blank=True, verbose_name='年龄') # 年龄，可为空
     location = models.CharField(max_length=100, null=True, blank=True, verbose_name='所在地') # 所在地，可为空
 
@@ -55,6 +61,7 @@ class User(models.Model):
             "createTime": self.create_time,
             "introduction": self.introduction,
             "birthday": self.birthday,
+            "portraitType": self.portrait_type,
             "portrait": self.portrait,
             "gender": self.gender,
             "age": self.age,
@@ -70,10 +77,10 @@ class User(models.Model):
         return {
             "userName": self.name, 
             "nickName": self.nick_name,
-            "createTime": self.create_time,
             "introduction": self.introduction,
             "birthday": self.birthday,
             "portrait": self.portrait,
+            "portraitType": self.portrait_type,
             "gender": self.gender,
             "age": self.age,
             "location": self.location,
@@ -87,6 +94,7 @@ class User(models.Model):
             "nickName": self.nick_name,
             "introduction": self.introduction,
             "portrait": self.portrait,
+            "portraitType": self.portrait_type,
             "gender": self.gender,
             "age": self.age,
             "location": self.location,
@@ -97,12 +105,12 @@ class User(models.Model):
     def __str__(self) -> str:
         return self.name
     
-    def __logout__(self):
+    def logout(self):
         self.is_online = False
         self.logout_time = timezone.now()
         self.save()
 
-    def __login__(self):
+    def login(self):
         self.is_online = True
         self.save()
 

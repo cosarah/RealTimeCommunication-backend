@@ -1,0 +1,57 @@
+{
+    "userName": "JohnDoe1",
+    "friendName": "JaneSmith2",
+    "message": "Hi Jane, it's John. Looking forward to connecting with you!"
+},
+{
+    "userName": "JohnDoe1",
+    "password":"438y9yn",
+    "nickName": "Johnny1",
+    "phone": "+1 (234) 567-8901",
+    "email": "john.doe.1@example.com",
+    "gender": "male",
+    "portrait": "https://example.com/profile_picture_1.jpg",
+    "introduction": "Hello, I'm John Doe 1.",
+    "birthday": "1990-01-01",
+    "age": "34",
+    "location": "New York"
+  },
+  {
+    "userName": "JaneSmith2",
+    "password":"y958344r4",
+    "nickName": "Janey2",
+    "phone": "+1 (345) 678-9012",
+    "email": "jane.smith.2@example.com",
+    "gender": "female",
+    "portrait": "https://example.com/profile_picture_2.jpg",
+    "introduction": "Hello, I'm Jane Smith 2.",
+    "birthday": "1985-05-15",
+    "age": "42",
+    "location": "Los Angeles"
+  },
+  {
+    "userName": "MikeBrown3",
+    "password":"dewnfioernfu",
+    "nickName": "Mikey3",
+    "phone": "+1 (456) 789-0123",
+    "email": "mike.brown.3@example.com",
+    "gender": "male",
+    "portrait": "https://example.com/profile_picture_3.jpg",
+    "introduction": "Hello, I'm Mike Brown 3.",
+    "birthday": "1978-08-08",
+    "age": "48",
+    "location": "Chicago"
+  },
+  {
+    "userName": "LindaMartin4",
+    "nickName": "Lindy4",
+    "phone": "+1 (567) 890-1234",
+    "password":"dewiofin",
+    "email": "linda.martin.4@example.com",
+    "gender": "female",
+    "portrait": "https://example.com/profile_picture_4.jpg",
+    "introduction": "Hello, I'm Linda Martin 4.",
+    "birthday": "1993-11-23",
+    "age": "33",
+    "location": "San Francisco"
+  }
