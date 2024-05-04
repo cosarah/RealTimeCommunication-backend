@@ -61,6 +61,7 @@ def send_private_message(req: HttpRequest):
         return FRIENDSHIP_NOT_FOUND
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     
+    # 私聊
     if PrivateConversation.objects.filter(user1=user,user2=friend).exists():
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
     elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
@@ -69,12 +70,25 @@ def send_private_message(req: HttpRequest):
         private_conversation = PrivateConversation(user1=user,user2=friend)
         private_conversation.save()
     
+    # 用户自己的私聊
     if UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
         user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
     else:
         user_private_conversation = UserPrivateConversation(user=user,friendship=friendship,conversation=private_conversation)
         user_private_conversation.save()
 
+    # 好友的私聊
+    if UserPrivateConversation.objects.filter(user=friend,conversation=private_conversation).exists():
+        friend_private_conversation = UserPrivateConversation.objects.get(user=friend,conversation=private_conversation)
+    else:
+        friend_private_conversation = UserPrivateConversation(user=friend,friendship=friendship,conversation=private_conversation)
+        friend_private_conversation.save()
+    # 更新消息
+    friend_private_conversation.unread_messages_count += 1
+    friend_private_conversation.save()
+    
+    # 发送消息
+    message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation)
     if quote_id == "": quote_id = -1
     if PrivateMessage.objects.filter(id=quote_id).exists():
         quote_message = PrivateMessage.objects.get(id=quote_id)

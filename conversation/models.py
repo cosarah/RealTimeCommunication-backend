@@ -55,8 +55,12 @@ class UserPrivateConversation(models.Model):
             'id': self.id,
             'userName': self.user.name,
             'friendName': self.friendship.to_user.name,
+            'friendNickName': self.friendship.to_user.nick_name,
             'friendAlias': self.friendship.alias,
-            ''
+            'friendPortraitType': self.friendship.to_user.portrait_type,
+            'friendPortraitUrl': self.friendship.to_user.portrait,
+            'friendIsOnline': self.friendship.to_user.is_online,
+            
             'unreadMessageCount': self.unread_messages_count,
             'lastMessageText': self.conversation.last_message_text,
             'lastMessageTime': self.conversation.updated_time.strftime('%Y-%m-%d %H:%M:%S')
