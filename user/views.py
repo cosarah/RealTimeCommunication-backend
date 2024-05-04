@@ -64,7 +64,7 @@ def get_user_info(req: HttpRequest):
         return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists():
-        return request_failed(1, "User not exist", 401)
+        return USER_NOT_FOUND
     
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
@@ -115,7 +115,7 @@ def fix_user_info(req: HttpRequest):
 
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
-        return request_failed(1, "User not exist", 401)
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     if nick_name: user.nick_name = nick_name
     if phone: user.phone = phone
@@ -128,6 +128,30 @@ def fix_user_info(req: HttpRequest):
     if location: user.location = location
     user.save()
     return request_success({"token": generate_jwt_token(user_name)})
+
+def fix_password(req: HttpRequest):
+    if req.method != "POST":
+        return BAD_METHOD
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        old_password = require(body, "oldPassword", "string", err_msg="Missing or error type of [oldPassword]")
+        new_password = require(body, "newPassword", "string", err_msg="Missing or error type of [newPassword]")
+    except:
+        return request_failed(0, "Missing or error type of [userName]", 400)
+
+    # 查找数据库中对应用户，并进行修改
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    if user.password == old_password:
+        user.password = new_password
+        user.save()
+        return request_success({"token": generate_jwt_token(user_name)})
+    else:
+        return request_failed(2, "Wrong password", 401)
+
+
 
 # 注销
 @CheckRequire

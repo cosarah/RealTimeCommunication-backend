@@ -286,6 +286,7 @@ def fix_friend_profile(req:HttpRequest):
         alias = require(body, "alias", "string", err_msg="Missing or error type of [alias]")
         description = require(body, "description", "string", err_msg="Missing or error type of [description]")
         tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
+
     except:
         return BAD_PARAMS
     
@@ -310,7 +311,7 @@ def fix_friend_profile(req:HttpRequest):
         friendship.add_friend_tag(tag)
 
     return request_success()
-        
+
 def get_user_tag(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
