@@ -40,9 +40,9 @@ class LoginTests(TestCase):
 
         data = {"userName": "NewUser", "password": "123456"}
         res = self.client.post('/login', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
         self.assertFalse(User.objects.filter(name="NewUser").exists())
 
     def test_login_with_bad_method(self):
@@ -185,9 +185,9 @@ class CloseTests(TestCase):
 
         data = {"userName": "Ashi", "password": "123456"}
         res = self.client.post('/user/close', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
 
 
 class UserTestCase(TestCase):
