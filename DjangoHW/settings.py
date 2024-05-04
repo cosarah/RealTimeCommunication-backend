@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'user',
     'friend',
     'message',
+    'conversation',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',

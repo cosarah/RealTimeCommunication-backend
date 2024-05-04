@@ -4,7 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import Friendship
-from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation
+from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -12,20 +12,46 @@ from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # Create your views here.
+# 每次返回的都是按照更新时间拍讯的表单
+def get_private_message_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+
+    private_conversations = UserPrivateConversation.objects.filter(user=user)
+    conversation_list = []
+    for private_conversation in private_conversations:
+        conversation_list.append(private_conversation.serialize())
+    
+    return request_success(data={'conversationList': conversation_list})
+
+
 
 def send_private_message(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
     
     try:
-        user_name = req.GET.get('userName')
-        friend_name = req.GET.get('friendName')
-        message_text = req.GET.get('message')
-        quote_id = req.GET.get('quote')
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+        message_text = require(body, "message", "string", err_msg="Missing or error type of [message]")
+        quote_id = require(body, "quote", "string", err_msg="Missing or error type of [quote]")
+
     except:
         return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
+        print("can not found",user_name,friend_name)
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
@@ -33,7 +59,8 @@ def send_private_message(req: HttpRequest):
     # check the friendship
     if not Friendship.objects.filter(from_user=user, to_user=friend):
         return FRIENDSHIP_NOT_FOUND
-
+    friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    
     if PrivateConversation.objects.filter(user1=user,user2=friend).exists():
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
     elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
@@ -42,8 +69,21 @@ def send_private_message(req: HttpRequest):
         private_conversation = PrivateConversation(user1=user,user2=friend)
         private_conversation.save()
     
-    message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation,quote=quote_id)
+    if UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
+        user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
+    else:
+        user_private_conversation = UserPrivateConversation(user=user,friendship=friendship,conversation=private_conversation)
+        user_private_conversation.save()
+
+    if quote_id == "": quote_id = -1
+    if PrivateMessage.objects.filter(id=quote_id).exists():
+        quote_message = PrivateMessage.objects.get(id=quote_id)
+        message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation,quote=quote_message)
+    else:
+        message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation)
     message.save()
-            
+    private_conversation.last_message_text = message_text
+    private_conversation.save()
+    return request_success()
     
     

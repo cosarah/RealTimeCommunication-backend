@@ -1,5 +1,6 @@
 from django.db import models
 from user.models import User
+from friend.models import Friendship
 
 # Create your models here.
 
@@ -34,26 +35,44 @@ class PrivateMessage(models.Model):
             self.save()
             return True
 
-class UserPrivateMessageReicever(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='private_message_receiver')
-    def read(conversation_name):
-        user = private_message_receiver
-        user_private_conversation = UserPrivateConversation.objects.get(user=self.user, conversation__name=conversation_name)
-        user_private_conversation.read = True
-        user_private_conversation.save()
+# class UserPrivateMessageReicever(models.Model):
+#     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='private_message_receiver')
+#     def read(self, conversation_name):
+#         user_private_conversation = UserPrivateConversation.objects.get(user=self.user, conversation__name=conversation_name)
+#         user_private_conversation.read = True
+#         user_private_conversation.save()
+#         return True
+    
 
 class UserPrivateConversation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='private_conversations')
+    friendship = models.ForeignKey(Friendship, on_delete=models.CASCADE, related_name='private_conversation_friends')
     conversation = models.ForeignKey(PrivateConversation, on_delete=models.CASCADE, related_name='private_participants')
-    receiver = models.ForeignKey(UserPrivateMessageReicever, on_delete=models.CASCADE, related_name='private_conversations')
+    # receiver = models.ForeignKey(UserPrivateMessageReicever, on_delete=models.CASCADE, related_name='private_conversations')
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
-
-
+    def serialize(self):
+        return {
+            'id': self.id,
+            'userName': self.user.name,
+            'friendName': self.friendship.to_user.name,
+            'friendAlias': self.friendship.alias,
+            ''
+            'unreadMessageCount': self.unread_messages_count,
+            'lastMessageText': self.conversation.last_message_text,
+            'lastMessageTime': self.conversation.updated_time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+    def read(self):
+        if self.unread_messages_count == 0:
+            return False
+        else:
+            self.unread_messages_count = 0
+            self.save()
+            return True
 
 
 class GroupConversation(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True) # 对于群聊，有标题
-    participants = models.ManyToManyField(User, through='Participant')
+    participants = models.ManyToManyField(User)
     owner = models.ForeignKey(User, related_name='owner', on_delete=models.CASCADE)
     admins = models.ManyToManyField(User, related_name='admins', blank=True)
 
@@ -66,8 +85,6 @@ class Announcement(models.Model):
     created_by = models.ForeignKey(User, related_name='created_by', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        indexes = [models.Index(fields=["group_chat"])]
 
     def __str__(self):
         return self.text
