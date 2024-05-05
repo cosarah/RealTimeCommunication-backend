@@ -12,7 +12,7 @@ from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # Create your views here.
-# 每次返回的都是按照更新时间拍讯的表单
+# 每次返回的都是按照更新时间排序的表单
 def get_private_message_list(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
@@ -51,7 +51,6 @@ def send_private_message(req: HttpRequest):
         return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
-        print("can not found",user_name,friend_name)
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)

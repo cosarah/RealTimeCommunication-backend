@@ -78,6 +78,7 @@ def add_friend(req: HttpRequest):
         friend_request = FriendRequest.objects.get(from_user=user, to_user=friend)
         friend_request_message = FriendRequestMessage(request=friend_request, message=apply_message)
         friend_request.update_message(apply_message) # 更新最新申请消息
+        friend_request.status = 0 # 更新申请状态
         friend_request_message.save() 
         return request_success({})
     else : # 创建新的好友请求
