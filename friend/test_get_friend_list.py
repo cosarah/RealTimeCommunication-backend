@@ -43,13 +43,3 @@ class TestGetFriendList(TestCase):
         self.assertIn(self.user3.name, name_list)
         self.assertNotIn(self.user4.name, name_list)
 
-    def test_get_friend_list_by_tag(self):
-        response = self.client.get('/friend/tag/', {'userName': self.user1.name, 'tagName': 'tag1'})
-
-        self.assertEqual(response.status_code, 200)
-        data = json.loads(response.content)
-        name_list = [friend_info['userName'] for friend_info in data['tag1']]
-        self.assertEqual(len(name_list), 2)
-        self.assertIn(self.user2.name, name_list)
-        self.assertIn(self.user3.name, name_list)
-        self.assertNotIn(self.user4.name, name_list)

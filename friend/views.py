@@ -67,6 +67,8 @@ def add_friend(req: HttpRequest):
         apply_message = require(body, "message", "string", err_msg="Missing or error type of [message]")
     except:
         return BAD_PARAMS 
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     if apply_message == "":
@@ -102,8 +104,12 @@ def accept_friend_request(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if FriendRequest.objects.filter(to_user=user_name, from_user=friend_name).exists():
-        friend_request = FriendRequest.objects.get(to_user=user_name, from_user=friend_name)
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+    if FriendRequest.objects.filter(to_user=user, from_user=friend).exists():
+        friend_request = FriendRequest.objects.get(to_user=user, from_user=friend)
         if friend_request.accept():
             return request_success({})
         else:
