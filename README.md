@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Django后端
+=======
+## Django 后端
+>>>>>>> feature/message
 
 ## 环境配置
 
@@ -27,7 +31,7 @@ python3 manage.py runserver
 
 
 ```bash
- python3 manage.py makemigrations user friend message && python3 manage.py migrate
+ python3 manage.py makemigrations user friend message conversation && python3 manage.py migrate
 ```
 
 

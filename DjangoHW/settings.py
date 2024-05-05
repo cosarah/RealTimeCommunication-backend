@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'user',
     'friend',
     'message',
+    'conversation',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -63,7 +64,8 @@ CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ORIGIN_WHITELIST = [
     'https://app-frontend-allright.app.secoder.net',
-    'https://frontend-dev-allright.app.secoder.net'
+    'https://frontend-dev-allright.app.secoder.net',
+    'http://localhost:3000'
 ]
 
 ROOT_URLCONF = 'DjangoHW.urls'

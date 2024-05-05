@@ -12,6 +12,41 @@ from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
 
 # -*- coding: UTF-8 -*-
 # Create your tests here.
+class UserTestCase(TestCase):
+
+    def setUp(self):
+
+        self.user = User.objects.create(
+            name='TestUser',
+            password='password123',
+            email='test@example.com',
+            phone='12345678901'
+        )
+
+    def test_user_creation(self):
+        """测试 User 模型对象的创建是否成功"""
+        self.assertEqual(self.user.name, 'TestUser')
+        self.assertTrue(self.user.password, 'password123')
+        self.assertFalse(self.user.is_online)
+        self.assertEqual(self.user.email, 'test@example.com')
+        self.assertEqual(self.user.phone, '12345678901')
+        self.assertEqual(self.user.gender,0)
+
+
+    def test_user_str(self):
+        """测试 User 模型的 __str__ 方法"""
+        self.assertEqual(str(self.user), 'TestUser')
+
+    def test_user_serialize1(self):
+        """测试 User 模型的 serialize 方法"""
+        serialized_data = self.user.__all_info__()
+        self.assertEqual(serialized_data['email'], 'test@example.com')
+    
+    def test_user_serialize2(self):
+        """测试 User 模型的 serialize 方法"""
+        serialized_data = self.user.__friend_info__()
+        self.assertNotIn('email', serialized_data)
+
 class LoginTests(TestCase):
     # Initializer
     # ! Test section
@@ -40,9 +75,9 @@ class LoginTests(TestCase):
 
         data = {"userName": "NewUser", "password": "123456"}
         res = self.client.post('/login', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
         self.assertFalse(User.objects.filter(name="NewUser").exists())
 
     def test_login_with_bad_method(self):
@@ -146,9 +181,9 @@ class InfoTests(TestCase):
 
         data = {"userName": "Ashitemaru", "nickName": "Ashitemaru", "phone": "12345678901", "email": "ashitemaru@gmail.com", "gender": "male", "portrait": "https://example.com/portrait.jpg", "introduction": "Ashitemaru is a cool guy", "birthday": "1990-01-01", "age": "34", "location": "Beijing"}
         res = self.client.post('/user/fix', data=data, content_type='application/json')
-        self.assertEqual(res.status_code, 401)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
 
     def test_fix_info_with_bad_method(self):
 
@@ -161,56 +196,102 @@ class InfoTests(TestCase):
 
 class CloseTests(TestCase):
     # Initializer
+    def setUp(self):
+        self.data = {"userName": "Ashitemaru", "password": "123456"}
+        self.user = User.objects.create(name='Ashitemaru', password='123456')
     # ! Test section
     # * Tests for close view
     def test_close_account(self):
 
-        data = {"userName": "Ashitemaru", "password": "123456"}
-        res = self.client.post('/register', data=data, content_type='application/json')
-        res = self.client.post('/login', data=data, content_type='application/json')
-        res = self.client.post('/user/close', data=data, content_type='application/json')
+        res = self.client.post('/user/close', data=self.data, content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['info'], 'User closed')
 
     def test_close_account_with_bad_method(self):
 
-        data = {"userName": "Ashitemaru", "password": "123456"}
-        res = self.client.post('/register', data=data, content_type='application/json')
-        res = self.client.put('/user/close', data=data, content_type='application/json')
+        res = self.client.put('/user/close', data=self.data, content_type='application/json')
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
     
     def test_close_not_exist_user(self):
+        new_data = {"userName": "NewUser", "password": "123456"}
+        res = self.client.post('/user/close', data=new_data, content_type='application/json')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
 
-        data = {"userName": "Ashi", "password": "123456"}
-        res = self.client.post('/user/close', data=data, content_type='application/json')
+
+
+class LogoutTests(TestCase):
+    def setUp(self):
+        self.data = {"userName": "Ashitemaru", "password": "123456"}
+        self.user = User.objects.create(name='Ashitemaru', password='123456')
+    def test_logout(self):
+        """测试用户登出"""
+        res = self.client.post('/login', data=self.data, content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(res.json()['info'], 'Succeed')
+        self.assertTrue(res.json()['token'].count('.') == 2)
+        res = self.client.post('/logout', data=self.data, content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['info'], 'Logout succeed')
+
+    def test_logout_with_bad_method(self):
+        """测试用户登出时使用错误的 HTTP 方法"""
+
+        res = self.client.get('/logout', data=self.data, content_type='application/json')
+
+        self.assertEqual(res.status_code, 405)
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_logout_not_exist_user(self):
+        """测试不存在的用户登出"""
+
+        new_data = {"userName": "NewUser", "password": "123456"}
+        res = self.client.post('/logout', data=new_data, content_type='application/json')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')
+
+    def test_logout_without_login(self):
+        """测试未登录用户登出"""
+
+        res = self.client.post('/logout', data=self.data, content_type='application/json')
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User not exist')
+        self.assertEqual(res.json()['info'], 'User not logged in')
 
-
-class UserTestCase(TestCase):
-
+class FixUserPasswordTests(TestCase):
     def setUp(self):
+        self.data = {"userName": "Ashitemaru", "oldPassword": "123456", "newPassword":"123456789"}
+        self.user = User.objects.create(name='Ashitemaru', password='123456')
+    def test_fix_user_password(self):
+        """测试修改用户密码"""
+        res = self.client.post('/user/fix/password', data=self.data, content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['info'], 'Succeed')
 
-        self.user = User.objects.create(
-            name='TestUser',
-            password='password123',
-            email='test@example.com',
-            phone='12345678901'
-        )
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(User.objects.get(name='Ashitemaru').password, self.data["newPassword"])
 
-    def test_user_creation(self):
-        """测试 User 模型对象的创建是否成功"""
-        self.assertEqual(self.user.name, 'TestUser')
-        self.assertTrue(self.user.password, 'password123')
+    def test_fix_user_password_with_bad_method(self):
+        """测试修改用户密码时使用错误的 HTTP 方法"""
 
-    def test_user_str(self):
-        """测试 User 模型的 __str__ 方法"""
-        self.assertEqual(str(self.user), 'TestUser')
+        res = self.client.get('/user/fix/password', data=self.data, content_type='application/json')
 
-    def test_user_serialize(self):
-        """测试 User 模型的 serialize 方法"""
-        serialized_data = self.user.__all_info__()
-        self.assertEqual(serialized_data['email'], 'test@example.com')
+        self.assertEqual(res.status_code, 405)
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_fix_user_password_not_exist_user(self):
+        """测试不存在的用户修改密码"""
+
+        new_data = self.data.copy()
+        new_data["userName"] = "NewUser"
+        res = self.client.post('/user/fix/password', data=new_data, content_type='application/json')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')

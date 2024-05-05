@@ -1,5 +1,5 @@
 #!/bin/sh
-python3 manage.py makemigrations user friend message
+python3 manage.py makemigrations user friend message conversation
 python3 manage.py migrate
 
 # Run with uWSGI
