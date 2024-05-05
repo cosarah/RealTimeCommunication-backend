@@ -2,28 +2,6 @@ from django.db import models
 from user.models import User
 
 # Create your models here.
-<<<<<<< HEAD
-class Chat(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    users = models.ManyToManyField(User)
-
-
-
-# 聊天表
-class Conversation(models.Model):
-    id = models.BigAutoField(primary_key=True) # 主键
-    title = models.CharField(max_length=255, blank=True, null=True) # 对于群聊，有标题
-    is_group = models.BooleanField(default=False) # False 表示私聊，True 表示群聊
-    participants = models.ManyToManyField(User, through='Participant')
-    created_at = models.DateTimeField(auto_now_add=True) # 创建时间
-    updated_at = models.DateTimeField(auto_now=True) # 最新消息时间
-
-# 聊天参与者
-class Participant(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
-=======
 
 # 用户聊天管理
 
@@ -58,7 +36,6 @@ class GroupChat(models.Model):
 class Participant(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     conversation = models.ForeignKey(Chat, on_delete=models.CASCADE)
->>>>>>> feature/message
     joined_at = models.DateTimeField(auto_now_add=True) # 进群时间
     is_admin = models.BooleanField(default=False) # 是否为群管理员
     
@@ -67,11 +44,7 @@ class Participant(models.Model):
 
 # 信息表
 class Message(models.Model):
-<<<<<<< HEAD
-    conversation = models.ForeignKey(Conversation, related_name='messages', on_delete=models.CASCADE) # 对应聊天
-=======
     conversation = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE) # 对应聊天
->>>>>>> feature/message
     sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True) # 发送者，允许为空，即对应用户注销之后保留发送过的信息，但不显示头像
     text = models.TextField() # 文本
     quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True) # 引用消息
@@ -89,11 +62,7 @@ class MessageStatus(models.Model):
 
 # 群公告
 class Announcement(models.Model): 
-<<<<<<< HEAD
-    conversation = models.ForeignKey(Conversation, related_name='announcements', on_delete=models.CASCADE)
-=======
     conversation = models.ForeignKey(Chat, related_name='announcements', on_delete=models.CASCADE)
->>>>>>> feature/message
     message = models.TextField()
     announced_at = models.DateTimeField(auto_now_add=True)
     class Meta:
