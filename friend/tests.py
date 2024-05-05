@@ -1,10 +1,5 @@
 from django.test import TestCase
 from user.models import User
-<<<<<<< HEAD
-from friend.models import Friendship
-
-# Create your tests here.
-=======
 from friend.models import Friendship, FriendRequest, FriendRequestMessage, UserTag
 from django.utils import timezone
 
@@ -138,4 +133,3 @@ class UserTagTestCase(TestCase):
         self.assertFalse(UserTag.objects.filter(user=self.user1, name='friend').exists())
         self.assertTrue(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).exists())
         self.assertEqual(Friendship.objects.get(from_user=self.user1, to_user=self.user2).tags.all().count(), 0)
->>>>>>> feature/message
