@@ -42,6 +42,8 @@ def get_friend_request_list(req: HttpRequest):
         user_name = req.GET.get("userName")
     except:
         return BAD_PARAMS
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend_requests = FriendRequest.objects.filter(to_user=user)
     friend_applys = FriendRequest.objects.filter(from_user=user)
@@ -442,27 +444,29 @@ def get_friend_all_tag_list(req: HttpRequest):
     else:
         return USER_NOT_FOUND
     
-def get_friend_list_by_tag(req: HttpRequest):
-    if req.method != "GET":
-        return BAD_METHOD
+# def get_friend_list_by_tag(req: HttpRequest):
+#     if req.method != "GET":
+#         return BAD_METHOD
     
-    try:
-        user_name = req.GET.get("userName")
-        tag_name = req.GET.get("tagName")
-    except:
-        return BAD_PARAMS
+#     try:
+#         user_name = req.GET.get("userName")
+#         tag_name = req.GET.get("tagName")
+#     except:
+#         return BAD_PARAMS
     
-    if User.objects.filter(name=user_name).exists():
-        user = User.objects.get(name=user_name)
-        if user.user_tag.filter(name=tag_name).exists():
-            tag = user.user_tag.get(name=tag_name)
-            friend_list = tag.tag_friendship.all()
-            return_data = {
-                "tagName": tag.name,
-                "friends": [friend.friend_profile() for friend in friend_list]
-            }
-            return request_success(return_data)
-        else:
-            return request_failed(1, "Tag not found", 403)
-    else:
-        return USER_NOT_FOUND
+#     if not User.objects.filter(name=user_name).exists():
+#         return USER_NOT_FOUND
+#     user = User.objects.get(name=user_name)
+    
+#     if UserTag.objects.filter(name=tag_name,user=user).exists():
+#         tag = UserTag.objects.get(name=tag_name,user=user)
+#         friend_list = tag.tag_friendship.all()
+#         return_data = {
+#             "tagName": tag.name,
+#             "friends": [friend.friend_profile() for friend in friend_list]
+#         }
+#         return request_success(return_data)
+#     else:
+#         return request_failed(1, "Tag not found", 403)
+
+        

@@ -263,3 +263,35 @@ class LogoutTests(TestCase):
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], 'User not logged in')
+
+class FixUserPasswordTests(TestCase):
+    def setUp(self):
+        self.data = {"userName": "Ashitemaru", "oldPassword": "123456", "newPassword":"123456789"}
+        self.user = User.objects.create(name='Ashitemaru', password='123456')
+    def test_fix_user_password(self):
+        """测试修改用户密码"""
+        res = self.client.post('/user/fix/password', data=self.data, content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()['info'], 'Succeed')
+
+        self.assertEqual(res.json()['code'], 0)
+        self.assertEqual(User.objects.get(name='Ashitemaru').password, self.data["newPassword"])
+
+    def test_fix_user_password_with_bad_method(self):
+        """测试修改用户密码时使用错误的 HTTP 方法"""
+
+        res = self.client.get('/user/fix/password', data=self.data, content_type='application/json')
+
+        self.assertEqual(res.status_code, 405)
+        self.assertEqual(res.json()['code'], -3)
+        self.assertEqual(res.json()['info'], 'Bad method')
+
+    def test_fix_user_password_not_exist_user(self):
+        """测试不存在的用户修改密码"""
+
+        new_data = self.data.copy()
+        new_data["userName"] = "NewUser"
+        res = self.client.post('/user/fix/password', data=new_data, content_type='application/json')
+        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.json()['code'], -5)
+        self.assertEqual(res.json()['info'], 'User not found')

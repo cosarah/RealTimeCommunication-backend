@@ -16,6 +16,8 @@ class TestGetFriendList(TestCase):
         Friendship.objects.create(from_user=self.user3, to_user=self.user1)
         Friendship.objects.create(from_user=self.user2, to_user=self.user3)
         Friendship.objects.create(from_user=self.user3, to_user=self.user2)
+        self.tag1 = UserTag.objects.create(user=self.user1, name='tag1')
+        self.tag2 = UserTag.objects.create(user=self.user1, name='tag2')
     def test_get_friend_list(self):
         response = self.client.get('/friend/', {'userName': self.user1.name})
         self.assertEqual(response.status_code, 200)
@@ -27,10 +29,9 @@ class TestGetFriendList(TestCase):
         self.assertNotIn(self.user4.name, name_list)
 
     def test_get_friend_list_with_tag(self):
-        tag1 = UserTag.objects.create(user=self.user1, name='tag1')
-        tag2 = UserTag.objects.create(user=self.user1, name='tag2')
-        self.friendship1.tags.set([tag1,tag2])
-        self.friendship2.tags.set([tag1])
+        
+        self.friendship1.tags.set([self.tag1,self.tag2])
+        self.friendship2.tags.set([self.tag1])
         response = self.client.get('/friend/tags/', {'userName': self.user1.name})
 
         self.assertEqual(response.status_code, 200)
@@ -42,3 +43,13 @@ class TestGetFriendList(TestCase):
         self.assertIn(self.user3.name, name_list)
         self.assertNotIn(self.user4.name, name_list)
 
+    def test_get_friend_list_by_tag(self):
+        response = self.client.get('/friend/tag/', {'userName': self.user1.name, 'tagName': 'tag1'})
+
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.content)
+        name_list = [friend_info['userName'] for friend_info in data['tag1']]
+        self.assertEqual(len(name_list), 2)
+        self.assertIn(self.user2.name, name_list)
+        self.assertIn(self.user3.name, name_list)
+        self.assertNotIn(self.user4.name, name_list)

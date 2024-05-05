@@ -19,5 +19,5 @@ urlpatterns = [
 
     path('usertag/',views.get_user_tag), # 获取标签列表
     path('tags/', views.get_friend_all_tag_list), # 获取以标签分类的好友列表
-    path('tag', views.get_friend_list_by_tag) # 获取某标签的全部好友
+    # path('tag/', views.get_friend_list_by_tag) # 获取某标签的全部好友
 ]
