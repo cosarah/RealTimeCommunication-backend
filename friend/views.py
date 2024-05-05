@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserTag
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -361,7 +361,7 @@ def delete_friend(req: HttpRequest):
         Friendship.objects.filter(from_user=user, to_user=friend).delete()
         return request_success({})
     else:
-        return request_failed(1, "Friend not found", 403)
+        return FRIENDSHIP_NOT_FOUND
 ### TODO:删除好友对聊天信息，好友请求的影响
 ### note:这是单方向的删除好友，这会对聊天造成影响，聊天时需要先检验对方是否仍是好友
 
@@ -376,7 +376,7 @@ def get_user_profile(req: HttpRequest):
         keyword = req.GET.get("keyword")
         info = req.GET.get("info")
     except:
-        return request_failed(0, "Missing or error format of request body", 403)
+        return BAD_PARAMS
     
     user = User.objects.get(name=user_name)
     if info == "name": # 按用户名搜索
@@ -395,7 +395,7 @@ def get_user_profile(req: HttpRequest):
                 }
             return request_success(return_data)
         else:
-            return request_failed(1, "User not found", 403)
+            return USER_NOT_FOUND
     
     elif info == "email": # 按邮箱搜索
         if User.objects.filter(email=keyword).exists():
@@ -413,7 +413,7 @@ def get_user_profile(req: HttpRequest):
                 }
             return request_success(return_data)
         else:
-            return request_failed(1, "User not found", 403)
+            return USER_NOT_FOUND
     
     elif info == "phone": # 按手机号搜索
         if User.objects.filter(phone=keyword).exists():
@@ -431,7 +431,7 @@ def get_user_profile(req: HttpRequest):
                 }
             return request_success(return_data)
         else:
-            return request_failed(1, "User not found", 403)
+            return USER_NOT_FOUND
     
     else:
         return request_failed(1, "Unknown info type", 403)
