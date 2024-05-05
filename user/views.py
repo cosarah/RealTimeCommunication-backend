@@ -158,15 +158,15 @@ def fix_password(req: HttpRequest):
 def close(request: HttpRequest):
     if request.method != "POST":
         return BAD_METHOD
-    else:
-        body = json.loads(request.body.decode("utf-8"))
-        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-        
-        if not User.objects.filter(name=user_name).exists():
-            return USER_NOT_FOUND
-        user = User.objects.get(name=user_name)
-        user.delete()
-        return request_success({"info": "User closed","token": generate_jwt_token(user_name)})
+    
+    body = json.loads(request.body.decode("utf-8"))
+    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    user.delete()
+    return request_success(info="User closed")
 # 重定位到登录页
 
 
@@ -183,4 +183,7 @@ def logout(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
-    user.logout()
+    if user.logout():
+        return request_success(info="Logout succeed")
+    else:
+        return request_failed(1, "User not logged in", 401)

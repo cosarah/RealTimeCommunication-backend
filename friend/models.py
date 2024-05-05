@@ -80,6 +80,9 @@ class FriendRequest(models.Model):
         return_data['updatedTime'] = self.updated_time.strftime("%Y-%m-%d %H:%M:%S")
         return_data['updatedMessage'] = self.updated_message
         return_data['status'] = self.status
+        messages =  self.messages.all().order_by('message_time')
+        return_data['allMessages'] = [message.message for message in messages]
+        return_data['allMessagesTime'] = [message.message_time.strftime("%Y-%m-%d %H:%M:%S") for message in messages]
         return return_data
     
     def to_user_profile(self)->dict: # 被申请用户信息
@@ -87,6 +90,9 @@ class FriendRequest(models.Model):
         return_data['updatedTime'] = self.updated_time.strftime("%Y-%m-%d %H:%M:%S")
         return_data['updatedMessage'] = self.updated_message
         return_data['status'] = self.status
+        messages = self.messages.all().order_by('message_time')
+        return_data['allMessages'] = [message.message for message in messages]
+        return_data['allMessagesTime'] = [message.message_time.strftime("%Y-%m-%d %H:%M:%S") for message in messages]
         return return_data
 
     def accept(self)->bool: # 接受申请

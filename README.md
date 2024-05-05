@@ -27,7 +27,7 @@ python3 manage.py runserver
 
 
 ```bash
- python3 manage.py makemigrations user friend message && python3 manage.py migrate
+ python3 manage.py makemigrations user friend message conversation && python3 manage.py migrate
 ```
 
 
