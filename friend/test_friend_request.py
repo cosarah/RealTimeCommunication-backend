@@ -145,8 +145,58 @@ class FriendRequestAcceptTest(TestCase):
         self.assertEqual(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).count(), 1)
         self.assertEqual(FriendRequest.objects.get(from_user=self.user1, to_user=self.user2).status, 1)
 
-class FriendRequestDenyTest(TestCase):
+class FriendRequestRejectTest(TestCase):
     def setUp(self):
         self.user1 = User.objects.create(name='user1', password='password')
         self.user2 = User.objects.create(name='user2', password='password')
         self.request = FriendRequest.objects.create(from_user=self.user1, to_user=self.user2)
+        self.data = {'userName':self.user2.name,'friendName': self.user1.name }
+    def test_reject_friend_request(self):
+        response = self.client.post('/friend/reject/', data=self.data, content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(FriendRequest.objects.get(from_user=self.user1, to_user=self.user2).status, 2)
+
+    def test_reject_friend_request_with_bad_method(self):
+        response = self.client.get('/friend/reject/', data=self.data, content_type='application/json')
+        self.assertEqual(response.status_code, 405)
+
+    def test_reject_friend_request_with_no_user(self):
+        data = self.data.copy()
+        data['userName'] = 'no_user'
+        response = self.client.post('/friend/reject/', data=data, content_type='application/json')
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(json.loads(response.content)['info'], 'User not found')
+        self.assertEqual(json.loads(response.content)['code'], -5)
+
+    def test_reject_friend_request_with_no_request(self):
+        User.objects.create(name='no_request', password='password')
+        new_data = self.data.copy()
+        new_data['friendName'] = 'no_request'
+        response = self.client.post('/friend/reject/', data=new_data, content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(json.loads(response.content)['info'], 'Friend request not found')
+        self.assertEqual(json.loads(response.content)['code'], 2)
+    
+    def test_reject_friend_request_with_already_accepted(self):
+        self.request.status = 1
+        self.request.save()
+        response = self.client.post('/friend/reject/', data=self.data, content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(FriendRequest.objects.get(from_user=self.user1, to_user=self.user2).status, 1)
+        self.assertEqual(json.loads(response.content)['info'], 'Friend request already accepted or rejected')
+        self.assertEqual(json.loads(response.content)['code'], 1)
+
+        self.request.status = 0
+        self.request.save()
+
+    def test_reject_friend_request_with_already_rejected(self):
+        self.request.status = 2
+        self.request.save()
+        response = self.client.post('/friend/reject/', data=self.data, content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(FriendRequest.objects.get(from_user=self.user1, to_user=self.user2).status, 2)
+        self.assertEqual(json.loads(response.content)['info'], 'Friend request already accepted or rejected')
+        self.assertEqual(json.loads(response.content)['code'], 1)
+
+        self.request.status = 0
+        self.request.save()
