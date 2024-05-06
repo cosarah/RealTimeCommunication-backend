@@ -43,7 +43,8 @@ def login(req: HttpRequest):
     user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
 
-    if not User.objects.filter(name=user_name).exists(): # 若用户不存在
+    # 若用户不存在或已注销
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=user_name, is_closed=False).exists(): 
         return USER_NOT_FOUND
 
     user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
