@@ -124,6 +124,17 @@ class User(models.Model):
     def close(self):
         self.is_closed = True
         self.is_online = False
+        self.nick_name = '已注销用户'
+        self.age = None
+        self.birthday = None
+        self.email = None
+        self.gender = 0
+        self.introduction = None
+        self.location = None
+        self.logout_time = None
+        self.phone = None
+        self.portrait = None
+        self.portrait_type = 0
         self.save()
 
     ## TODO:数据校验：如邮箱格式、电话号码格式等
