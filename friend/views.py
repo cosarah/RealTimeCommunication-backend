@@ -320,8 +320,8 @@ def fix_friend_profile(req:HttpRequest):
     if description: 
         friendship.set_description(description)
     if tag:
-        friendship.delete_friendship_tag(tag)
-        friendship.add_friendship_tag(tag)
+        if not friendship.delete_friendship_tag(tag):
+            friendship.add_friendship_tag(tag)
 
     return request_success()
 
