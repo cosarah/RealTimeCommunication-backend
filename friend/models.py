@@ -51,6 +51,7 @@ class Friendship(models.Model):
             del_tag.remove_friendship(self)
             self.tags.remove(del_tag)
             self.save()
+            del_tag.save()
             return True
         else:
             return False
