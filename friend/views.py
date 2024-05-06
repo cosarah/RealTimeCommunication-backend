@@ -4,6 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserTag
+from conversation.models import PrivateConversation
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -112,6 +113,9 @@ def accept_friend_request(req: HttpRequest):
     if FriendRequest.objects.filter(to_user=user, from_user=friend).exists():
         friend_request = FriendRequest.objects.get(to_user=user, from_user=friend)
         if friend_request.accept():
+            # 建立私聊
+            private_conversation = PrivateConversation.objects.create(user1=user, user2=friend)
+            private_conversation.save()
             return request_success({})
         else:
             return request_failed(1, "Friend request already accepted", 403)
@@ -361,6 +365,8 @@ def delete_friend(req: HttpRequest):
     if Friendship.objects.filter(from_user=user, to_user=friend).exists():
         Friendship.objects.filter(from_user=user, to_user=friend).delete()
         Friendship.objects.filter(from_user=friend, to_user=user).delete()
+        FriendRequest.objects.filter(to_user=user, from_user=friend).delete()
+        FriendRequest.objects.filter(to_user=friend, from_user=user).delete()
         return request_success({})
     else:
         return FRIENDSHIP_NOT_FOUND
