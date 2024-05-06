@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-# Django后端
-=======
 ## Django 后端
->>>>>>> feature/message
 
 ## 环境配置
 
@@ -20,7 +16,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ### 数据库
 
 ```bash
-python manage.py makemigrations user friend message 
+python manage.py makemigrations user friend message conversation
 python manage.py migrate
 ```
 
