@@ -47,6 +47,7 @@ class PrivateMessage(models.Model):
             'senderName': self.sender.name,
             'sendTime': self.created_time.strftime('%Y-%m-%d %H:%M:%S'),
             'text': self.text,
+            'isRead': self.is_read,
             'quoteId': self.quote.id if self.quote else None,
         }
     

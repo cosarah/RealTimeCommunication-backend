@@ -17,7 +17,7 @@ class FriendDeleteTest(TestCase):
         response = self.client.post('/friend/delete/',data=self.data, content_type='application/json')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).count(), 0)
-        self.assertEqual(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).count(), 1)
+        self.assertEqual(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).count(), 0)
         
 class UserSearchTest(TestCase):
 

@@ -49,7 +49,7 @@ class User(models.Model):
     gender = models.IntegerField(choices=GENDER_CHOICES, default=0, verbose_name='性别')
     age = models.IntegerField(null=True, blank=True, verbose_name='年龄') # 年龄，可为空
     location = models.CharField(max_length=100, null=True, blank=True, verbose_name='所在地') # 所在地，可为空
-
+    is_closed = models.BooleanField(default=False, verbose_name='用户已注销') 
 
     class Meta: # 快速搜索
         indexes = [models.Index(fields=["name"])]
@@ -70,7 +70,8 @@ class User(models.Model):
             "logoutTime":self.logout_time,
             "phone": self.phone,
             "email": self.email,
-            "password": self.password
+            "password": self.password,
+            "isClosed": self.is_closed
         }
 
     def __friend_info__(self): # 序列化，不含密码、电话、邮箱等隐私信息
@@ -85,7 +86,8 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":self.logout_time
+            "logoutTime":self.logout_time,
+            "isClosed": self.is_closed
         }
     
     def __info__(self): # 不认识的人可以用这个方法查看用户信息
@@ -99,7 +101,8 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":self.logout_time
+            "logoutTime":self.logout_time,
+            "isClosed": self.is_closed
         }
     
     def __str__(self) -> str:
@@ -116,6 +119,11 @@ class User(models.Model):
 
     def login(self):
         self.is_online = True
+        self.save()
+
+    def close(self):
+        self.is_closed = True
+        self.is_online = False
         self.save()
 
     ## TODO:数据校验：如邮箱格式、电话号码格式等

@@ -74,11 +74,12 @@ def add_friend(req: HttpRequest):
     if apply_message == "":
         apply_message = "你好，我是"+user.name+"，很高兴认识你。"
 
-    if Friendship.objects.filter(from_user=user, to_user=friend).exists(): # 已经是好友
+    if Friendship.objects.filter(from_user=user, to_user=friend).exists() and Friendship.objects.filter(from_user=friend, to_user=user).exists(): # 已经是好友
         return ALREADY_EXIST
+    
     if FriendRequest.objects.filter(from_user=friend, to_user=user).exists(): # 对方申请已经存在
         return request_failed(1, "Please go to accept friend request", 403)
-    if FriendRequest.objects.filter(from_user=user, to_user=friend).exists(): # 好友已经存在，支持继续发送申请
+    if FriendRequest.objects.filter(from_user=user, to_user=friend).exists(): # 好友申请已经存在，支持继续发送申请
         friend_request = FriendRequest.objects.get(from_user=user, to_user=friend)
         friend_request_message = FriendRequestMessage(request=friend_request, message=apply_message)
         friend_request.update_message(apply_message) # 更新最新申请消息
@@ -248,7 +249,7 @@ def add_friend_tag(req: HttpRequest):
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     
     if tag != "":
-        if friendship.add_friend_tag(tag):
+        if friendship.add_friendship_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag already exists", 403)
@@ -280,7 +281,7 @@ def delete_friend_tag(req: HttpRequest):
     
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     if tag != "":
-        if friendship.delete_friend_tag(tag):
+        if friendship.delete_friendship_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag not exist", 403)
@@ -320,8 +321,8 @@ def fix_friend_profile(req:HttpRequest):
     if description: 
         friendship.set_description(description)
     if tag:
-        friendship.delete_friend_tag(tag)
-        friendship.add_friend_tag(tag)
+        if not friendship.delete_friendship_tag(tag):
+            friendship.add_friendship_tag(tag)
 
     return request_success()
 
@@ -359,6 +360,7 @@ def delete_friend(req: HttpRequest):
     
     if Friendship.objects.filter(from_user=user, to_user=friend).exists():
         Friendship.objects.filter(from_user=user, to_user=friend).delete()
+        Friendship.objects.filter(from_user=friend, to_user=user).delete()
         return request_success({})
     else:
         return FRIENDSHIP_NOT_FOUND

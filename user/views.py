@@ -4,14 +4,34 @@ from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, ALREADY_CLOSED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # return_field函数根据提供的字段列表过滤出所需数据
 ### TODO:验证数据格式
+import re
 
+def validate_phone(phone):
+    # 假设我们期望的电话号码格式为以1开头的11位数字
+    return re.match(r'^1\d{10}$', phone) is not None
+
+def validate_email(email):
+    # 简单的电子邮件格式验证
+    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) is not None
+
+def validate_birthday(birthday):
+    # 假设我们期望的出生日期格式为YYYY-MM-DD
+    return re.match(r'^\d{4}-\d{2}-\d{2}$', birthday) is not None
+
+def validate_age(age):
+    # 年龄应该是一个正整数
+    return age.isdigit() and int(age) > 0
+
+def validate_location(location):
+    # 位置可以是一个简单的非空字符串
+    return isinstance(location, str) and location
 # 登录
 @CheckRequire
 def login(req: HttpRequest):
@@ -117,7 +137,11 @@ def fix_user_info(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
-    if nick_name: user.nick_name = nick_name
+    if user.is_closed == True:
+        return ALREADY_CLOSED
+    
+    if nick_name and isinstance(nick_name, str): 
+        user.nick_name = nick_name
     if phone: user.phone = phone
     if email: user.email = email
     if gender: user.gender = gender
@@ -144,6 +168,8 @@ def fix_password(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
+    if user.is_closed == True:
+        return ALREADY_CLOSED
     if user.password == old_password:
         user.password = new_password
         user.save()
@@ -158,14 +184,18 @@ def fix_password(req: HttpRequest):
 def close(request: HttpRequest):
     if request.method != "POST":
         return BAD_METHOD
-    
-    body = json.loads(request.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    try:
+        body = json.loads(request.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+    except:
+        return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
-    user.delete()
+    if user.is_closed == True:
+        return ALREADY_CLOSED
+    user.close()
     return request_success(info="User closed")
 # 重定位到登录页
 
@@ -183,6 +213,8 @@ def logout(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
+    if user.is_closed == True:
+        return ALREADY_CLOSED
     if user.logout():
         return request_success(info="Logout succeed")
     else:
