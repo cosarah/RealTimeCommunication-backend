@@ -11,7 +11,6 @@ class PrivateConversation(models.Model):
     user2 = models.ForeignKey(User, related_name='user2', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
     updated_time = models.DateTimeField(auto_now=True)
-    last_message = models.ForeignKey('PrivateMessage', on_delete=models.SET_NULL, null=True, blank=True, related_name='last_message_in_private')
 
     class Meta:
         ordering = ['-created_time']
