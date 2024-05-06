@@ -44,7 +44,7 @@ def login(req: HttpRequest):
     password = require(body, "password", "string", err_msg="Missing or error type of [password]")
 
     # 若用户不存在或已注销
-    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=user_name, is_closed=False).exists(): 
+    if not User.objects.filter(name=user_name).exists() or User.objects.filter(name=user_name, is_closed=True).exists(): 
         return USER_NOT_FOUND
 
     user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
@@ -86,6 +86,8 @@ def get_user_info(req: HttpRequest):
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
+    if User.objects.filter(name=user_name, is_closed=True).exists():
+        return ALREADY_CLOSED
     
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
