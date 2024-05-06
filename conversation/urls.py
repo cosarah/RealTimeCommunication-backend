@@ -4,7 +4,7 @@ import conversation.views as views
 
 urlpatterns = [
     path('', views.get_all_conversation_list), # 获取全部会话列表
-    path('private/', views.get_private_message_list), # 获取私信会话列表
+    path('private/', views.get_private_conversation_list), # 获取私信会话列表
     path('private/messages/', views.get_private_message_list), # 获取私信消息列表
     path('private/send/', views.send_private_message), # 发送消息
     path('private/delete/', views.delete_private_message) # 删除私信消息

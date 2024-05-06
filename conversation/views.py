@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import Friendship
 from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -44,16 +44,17 @@ def get_private_message_list(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if PrivateConversation.objects.filter(user1=user,user2=friend_name).exists(): # 若不存在，则创建之
+    friend = User.objects.get(name=friend_name)
+    if PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若不存在，则创建之
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend_name)
-    elif PrivateConversation.objects.filter(user1=friend_name,user2=user).exists():
-        private_conversation = PrivateConversation.objects.get(user1=friend_name,user2=user)
+    elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
+        private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else:
-        PrivateConversation.objects.create(user1=user,user2=user)    
+        private_conversation = PrivateConversation.objects.create(user1=user,user2=friend)    
     
     if not UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
         user_private_conversation = UserPrivateConversation.objects.create(user=user,conversation=private_conversation)
@@ -132,24 +133,30 @@ def delete_private_message(req: HttpRequest):
     try:
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
         message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
     if not PrivateMessage.objects.filter(id=message_id).exists():
-        return CONVERSATION_NOT_FOUND
+        return MESSAGE_NOT_FOUND
     private_message = PrivateMessage.objects.get(id=message_id)
 
     # 检查好友关系是否仍然存在
-    if not Friendship.objects.filter(from_user=user, to_user=private_message.sender).exists() or not Friendship.objects.filter(from_user=private_message.sender, to_user=user).exists():
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
         return FRIENDSHIP_NOT_FOUND
-
-    if private_message.sender != user:
+    
+    # 检查私聊会话是否存在
+    if not PrivateConversation.objects.filter(user1=user,user2=friend).exists() and not PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         return CONVERSATION_NOT_FOUND
+    
+    if private_message.sender != user:
+        return request_failed(1, "Not message sender", 403)
     
     private_message.delete()
     return request_success()
