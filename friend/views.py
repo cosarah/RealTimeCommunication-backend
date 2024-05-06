@@ -248,7 +248,7 @@ def add_friend_tag(req: HttpRequest):
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     
     if tag != "":
-        if friendship.add_friend_tag(tag):
+        if friendship.add_friendship_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag already exists", 403)
@@ -280,7 +280,7 @@ def delete_friend_tag(req: HttpRequest):
     
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
     if tag != "":
-        if friendship.delete_friend_tag(tag):
+        if friendship.delete_friendship_tag(tag):
             return request_success()
         else:
             return request_failed(2, "Tag not exist", 403)
@@ -320,8 +320,8 @@ def fix_friend_profile(req:HttpRequest):
     if description: 
         friendship.set_description(description)
     if tag:
-        friendship.delete_friend_tag(tag)
-        friendship.add_friend_tag(tag)
+        friendship.delete_friendship_tag(tag)
+        friendship.add_friendship_tag(tag)
 
     return request_success()
 

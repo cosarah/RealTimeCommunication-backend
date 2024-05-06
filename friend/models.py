@@ -34,7 +34,7 @@ class Friendship(models.Model):
     def get_tags(self):
         return [tag.__str__() for tag in self.tags.all()]
 
-    def add_friend_tag(self, tag): # 添加标签
+    def add_friendship_tag(self, tag): # 添加标签
         if not UserTag.objects.filter(name=tag, user=self.from_user).exists():
             new_tag = UserTag(name=tag, user=self.from_user)
             new_tag.save()
@@ -43,15 +43,23 @@ class Friendship(models.Model):
             new_tag.add_friendship(self)
             return True
         else: # 标签已存在
-            return False
+            new_tag = UserTag.objects.get(name=tag, user=self.from_user)
+            if new_tag not in self.tags.all(): # 但不包含好友关系，则添加之
+                self.tags.add(new_tag)
+                new_tag.add_friendship(self)
+                self.save()
+                new_tag.save()
+                return True
+            else: # 标签已存在于好友关系中，失败
+                return False
         
-    def delete_friend_tag(self, tag): # 删除标签
+    def delete_friendship_tag(self, tag): # 删除标签
         if UserTag.objects.filter(name=tag, user=self.from_user).exists():
             del_tag = UserTag.objects.get(name=tag, user=self.from_user)
-            del_tag.remove_friendship(self)
+            
             self.tags.remove(del_tag)
+            del_tag.remove_friendship(self)        
             self.save()
-            del_tag.save()
             return True
         else:
             return False
