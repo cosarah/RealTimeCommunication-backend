@@ -1,0 +1,10 @@
+version: '3'
+services:
+  web:
+    image: registry.secoder.net/allright/app-backend:dev
+    volumes:
+      - sqlite_volume:/app/db.sqlite3
+    ports:
+      - "80:80"
+volumes:
+  sqlite_volume:
