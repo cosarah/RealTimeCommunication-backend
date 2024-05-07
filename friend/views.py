@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserTag
 from conversation.models import PrivateConversation
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, ALREADY_CLOSED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -72,6 +72,8 @@ def add_friend(req: HttpRequest):
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
+    if friend.is_closed:
+        return ALREADY_CLOSED
     if apply_message == "":
         apply_message = "你好，我是"+user.name+"，很高兴认识你。"
 
@@ -138,6 +140,8 @@ def reject_friend_request(req: HttpRequest):
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
+    if friend.is_closed:
+        return ALREADY_CLOSED
     if FriendRequest.objects.filter(to_user=user, from_user=friend).exists():
         friend_request = FriendRequest.objects.get(to_user=user, from_user=friend)
         if friend_request.reject():
@@ -183,9 +187,11 @@ def fix_friend_alias(req: HttpRequest):
         return USER_NOT_FOUND
     if not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
+
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-
+    if friend.is_closed:
+        return ALREADY_CLOSED
     if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
         return request_failed(1, "Friend not found", 403)
     
@@ -315,6 +321,8 @@ def fix_friend_profile(req:HttpRequest):
     
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
+    if friend.is_closed:
+        return ALREADY_CLOSED
 
     if not Friendship.objects.filter(from_user=user, to_user=friend).exists():
         return request_failed(1, "Friend not found", 403)
