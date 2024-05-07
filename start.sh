@@ -1,5 +1,7 @@
 #!/bin/sh
-python3 manage.py makemigrations user friend message conversation
+chmod 664 db.sqlite3         # Sets the correct permissions
+
+python3 manage.py makemigrations user friend conversation
 python3 manage.py migrate
 
 # Run with uWSGI
