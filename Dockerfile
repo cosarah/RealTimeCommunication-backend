@@ -12,10 +12,6 @@ COPY . .
 
 EXPOSE 80
 
-COPY start.sh /start.sh
+COPY start.sh start.sh
 
-RUN chmod +x /start.sh
-RUN chown 1000:1000 /start.sh
-USER 1000
-
-CMD ["bash","./start.sh"]
+CMD ["bash","start.sh"]
