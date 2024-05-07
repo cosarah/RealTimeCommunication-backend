@@ -32,6 +32,7 @@ def validate_age(age):
 def validate_location(location):
     # 位置可以是一个简单的非空字符串
     return isinstance(location, str) and location
+
 # 登录
 @CheckRequire
 def login(req: HttpRequest):
