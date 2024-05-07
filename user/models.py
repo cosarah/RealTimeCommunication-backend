@@ -31,7 +31,7 @@ class User(models.Model):
     logout_time = models.DateTimeField(default=None, null=True, verbose_name='登出时间') # 登出时间，可为空
     
     # 个性化信息
-    nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default=name, verbose_name='昵称') # 昵称，可为空
+    nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default='', verbose_name='昵称') # 昵称，可为空
     portrait = models.URLField(null=True, blank=True, verbose_name='头像') # 头像url
     PORTRAIT_CHOICES = ( # 头像类型
         (0, '空'),

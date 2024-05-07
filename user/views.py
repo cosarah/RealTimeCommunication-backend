@@ -68,7 +68,7 @@ def register(req: HttpRequest):
     if User.objects.filter(name=user_name).exists():
         return request_failed(1, "User already exists", 409)
     else:
-        user = User(name=user_name, password=password)
+        user = User(name=user_name, password=password, nick_name=user_name)
         user.save()
         return request_success({"token": generate_jwt_token(user_name)})
 # 重定位到聊天列表页
