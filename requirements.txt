@@ -6,6 +6,8 @@ django-cors-headers
 # pymysql
 # mysqlclient==2.1.0
 
+pytz
+re
 pytest
 pytest-django
 coverage

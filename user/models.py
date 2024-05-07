@@ -17,11 +17,11 @@ from utils.utils_require import MAX_CHAR_LENGTH
 # auto_now=True 更新时间（只读）
 # choices 选项
 
-import pytz
-def get_local_time_str(self):
-    local_tz = pytz.timezone('Asia/Shanghai')  # 东八区时区
-    local_time = self.create_time.astimezone(local_tz)
-    return local_time.strftime('%Y-%m-%d %H:%M:%S')
+# import pytz
+# def get_local_time_str(self):
+#     local_tz = pytz.timezone('Asia/Shanghai')  # 东八区时区
+#     local_time = self.create_time.astimezone(local_tz)
+#     return local_time.strftime('%Y-%m-%d %H:%M:%S')
 
 
 # 用户表
@@ -65,7 +65,7 @@ class User(models.Model):
         return {
             "userName": self.name, 
             "nickName": self.nick_name,
-            "createTime": get_local_time_str(self.create_time),
+            "createTime": self.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             "introduction": self.introduction,
             "birthday": self.birthday.strftime('%Y-%m-%d') if self.birthday else None,
             "portraitType": self.portrait_type,
@@ -74,7 +74,7 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":get_local_time_str(self.logout_time),
+            "logoutTime":self.logout_time.strftime('%Y-%m-%d %H:%M:%S') if self.logout_time else None,
             "phone": self.phone,
             "email": self.email,
             "password": self.password,
@@ -93,7 +93,7 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":get_local_time_str(self.logout_time),
+            "logoutTime":self.logout_time.strftime('%Y-%m-%d %H:%M:%S') if self.logout_time else None,
             "isClosed": self.is_closed
         }
     
@@ -108,7 +108,7 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":get_local_time_str(self.logout_time),
+            "logoutTime":self.logout_time.strftime('%Y-%m-%d %H:%M:%S') if self.logout_time else None,
             "isClosed": self.is_closed
         }
     
