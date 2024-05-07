@@ -17,6 +17,13 @@ from utils.utils_require import MAX_CHAR_LENGTH
 # auto_now=True 更新时间（只读）
 # choices 选项
 
+import pytz
+def get_local_time_str(self):
+    local_tz = pytz.timezone('Asia/Shanghai')  # 东八区时区
+    local_time = self.create_time.astimezone(local_tz)
+    return local_time.strftime('%Y-%m-%d %H:%M:%S')
+
+
 # 用户表
 class User(models.Model):
     # 隐私信息，可用于认证
@@ -58,16 +65,16 @@ class User(models.Model):
         return {
             "userName": self.name, 
             "nickName": self.nick_name,
-            "createTime": self.create_time,
+            "createTime": get_local_time_str(self.create_time),
             "introduction": self.introduction,
-            "birthday": self.birthday,
+            "birthday": self.birthday.strftime('%Y-%m-%d') if self.birthday else None,
             "portraitType": self.portrait_type,
             "portrait": self.portrait,
             "gender": self.gender,
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":self.logout_time,
+            "logoutTime":get_local_time_str(self.logout_time),
             "phone": self.phone,
             "email": self.email,
             "password": self.password,
@@ -79,14 +86,14 @@ class User(models.Model):
             "userName": self.name, 
             "nickName": self.nick_name,
             "introduction": self.introduction,
-            "birthday": self.birthday,
+            "birthday": self.birthday.strftime('%Y-%m-%d') if self.birthday else None,
             "portrait": self.portrait,
             "portraitType": self.portrait_type,
             "gender": self.gender,
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":self.logout_time,
+            "logoutTime":get_local_time_str(self.logout_time),
             "isClosed": self.is_closed
         }
     
@@ -101,7 +108,7 @@ class User(models.Model):
             "age": self.age,
             "location": self.location,
             "isOnline":self.is_online,
-            "logoutTime":self.logout_time,
+            "logoutTime":get_local_time_str(self.logout_time),
             "isClosed": self.is_closed
         }
     
