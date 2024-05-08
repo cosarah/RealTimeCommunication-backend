@@ -12,6 +12,8 @@ COPY . .
 
 EXPOSE 80
 
+RUN mkdir db
+
 COPY start.sh start.sh
 
 CMD ["bash","start.sh"]
