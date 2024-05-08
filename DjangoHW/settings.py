@@ -95,7 +95,7 @@ WSGI_APPLICATION = 'DjangoHW.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME':  'db'/'db.sqlite3',
+        'NAME':  'db/db.sqlite3',
     }  # Change to MySQL or other databases for your FINAL project
 }
 
