@@ -5,13 +5,36 @@ from user.models import User
 from friend.models import FriendRequest, Friendship
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, ALREADY_CLOSED
-from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
+from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # return_field函数根据提供的字段列表过滤出所需数据
 ### TODO:验证数据格式
 import re
+
+def validate_username_password(username, password):
+    # 用户名规则：由字母、数字、下划线组成，长度在 4 到 20 之间
+    if not re.match(r'^[a-zA-Z0-9_]{4,20}$', username):
+        return False, "用户名必须由字母、数字、下划线组成，长度在 4 到 20 之间"
+    
+    # 密码规则：长度至少为 8，包含至少一个小写字母、一个大写字母和一个数字
+    if len(password) < 8:
+        return False, "密码长度至少为 8"
+    if not any(char.islower() for char in password):
+        return False, "密码必须包含至少一个小写字母"
+    if not any(char.isupper() for char in password):
+        return False, "密码必须包含至少一个大写字母"
+    if not any(char.isdigit() for char in password):
+        return False, "密码必须包含至少一个数字"
+
+    return True, "用户名和密码符合规则"
+
+def validate_name(name):
+    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', name) is not None
+
+def validate_password(password):
+    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password) is not None
 
 def validate_phone(phone):
     # 假设我们期望的电话号码格式为以1开头的11位数字
@@ -31,7 +54,12 @@ def validate_age(age):
 
 def validate_location(location):
     # 位置可以是一个简单的非空字符串
-    return isinstance(location, str) and location
+    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', location)
+
+def validate_introduction(introduction):
+    # 个人简介可以是一个简单的非空字符串
+    return re.match(r'^[a-zA-Z0-9_-]{0,40}$', introduction)
+
 
 # 登录
 @CheckRequire
@@ -62,12 +90,18 @@ def login(req: HttpRequest):
 def register(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
-    body = json.loads(req.body.decode("utf-8"))
-    user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
-    password = require(body, "password", "string", err_msg="Missing or error type of [password]")
-    # print(user_name, password)
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        password = require(body, "password", "string", err_msg="Missing or error type of [password]")
+    except:
+        return BAD_PARAMS
+    
+    if len(user_name) > MAX_NAME_LENGTH or len(password) > MAX_PASSWORD_LENGTH:
+        return BAD_PARAMS
+    
     if User.objects.filter(name=user_name).exists():
-        return request_failed(1, "User already exists", 409)
+        return ALREADY_EXIST
     else:
         user = User(name=user_name, password=password, nick_name=user_name)
         user.save()
@@ -136,6 +170,11 @@ def fix_user_info(req: HttpRequest):
         location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     except:
         return request_failed(0, "Missing or error type of [userName]", 400)
+
+    # 核验数据格式
+    if not 
+
+
 
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():

@@ -1,6 +1,7 @@
 from django.db import models
 from user.models import User
 from friend.models import Friendship
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH
 
 # Create your models here.
 
@@ -25,7 +26,7 @@ class PrivateConversation(models.Model):
 
 class PrivateMessage(models.Model):
     sender = models.ForeignKey(User, related_name='sender', on_delete=models.CASCADE)
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=MAX_CHAR_LENGTH)
     created_time = models.DateTimeField(auto_now_add=True)
     quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='private_quotes')
     conversation = models.ForeignKey(PrivateConversation, on_delete=models.CASCADE, related_name='messages')
@@ -83,7 +84,7 @@ class UserPrivateConversation(models.Model):
 
 class GroupMessage(models.Model):
     sender = models.ForeignKey(User, related_name='group_sender', on_delete=models.DO_NOTHING) # 用户删除之后，对应聊天记录并不删除
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=MAX_CHAR_LENGTH)
     created_time = models.DateTimeField(auto_now_add=True)
     quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='group_quotes') # 删除引用后，引用对象为空
     conversation = models.ForeignKey('GroupConversation', on_delete=models.CASCADE, related_name='messages')
@@ -101,7 +102,7 @@ class GroupMessage(models.Model):
         }
 
 class GroupConversation(models.Model):
-    title = models.CharField(max_length=255, blank=True, null=True) # 对于群聊，有标题
+    title = models.CharField(max_length=MAX_NAME_LENGTH, blank=True, null=True) # 对于群聊，有标题
     
     owner = models.ForeignKey(User, related_name='owner', on_delete=models.CASCADE) # 群主
     admins = models.ManyToManyField(User, related_name='admins') # 群管理员
@@ -181,7 +182,7 @@ class GroupConversationRequest(models.Model):
     group_conversation = models.ForeignKey(GroupConversation, on_delete=models.CASCADE, related_name='requests')
     from_user = models.ForeignKey(User, related_name='from_user', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='to_user', on_delete=models.CASCADE)
-    message = models.CharField(max_length=255, null=True, blank=True)
+    message = models.CharField(max_length=MAX_CHAR_LENGTH, null=True, blank=True)
     created_time = models.DateTimeField(auto_now_add=True)
     STATUS_CHOICES = (
         (0, '等待处理'),
@@ -209,7 +210,7 @@ class GroupConversationRequest(models.Model):
 
 class Announcement(models.Model): 
     group_conversation = models.ForeignKey(GroupConversation, related_name='announcements', on_delete=models.CASCADE)
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=MAX_CHAR_LENGTH)
     created_by = models.ForeignKey(User, related_name='created_by', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
 
@@ -226,7 +227,7 @@ class Announcement(models.Model):
 class UserGroupConversation(models.Model):
     group_conversation = models.ForeignKey(GroupConversation, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE) 
-    alias = models.CharField(max_length=255, null=True)  # 使用lambda获取nick_name    
+    alias = models.CharField(max_length=MAX_CHAR_LENGTH, null=True)  # 使用lambda获取nick_name    
     join_time = models.DateTimeField(auto_now_add=True) # 用户入群时间
     IDENTITY_CHOICES = (
         (2, '群主'),

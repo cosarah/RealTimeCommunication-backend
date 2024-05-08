@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.db import models
 
-from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
 
 # 可采用Django REST framework 的序列化器避免手写序列化代码
 # 一般外键链接主键
@@ -55,7 +55,7 @@ class User(models.Model):
     )
     gender = models.IntegerField(choices=GENDER_CHOICES, default=0, verbose_name='性别')
     age = models.IntegerField(null=True, blank=True, verbose_name='年龄') # 年龄，可为空
-    location = models.CharField(max_length=100, null=True, blank=True, verbose_name='所在地') # 所在地，可为空
+    location = models.CharField(max_length=MAX_INFO_LENGTH, null=True, blank=True, verbose_name='所在地') # 所在地，可为空
     is_closed = models.BooleanField(default=False, verbose_name='用户已注销') 
 
     class Meta: # 快速搜索
