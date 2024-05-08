@@ -106,8 +106,8 @@ class RegisterTests(TestCase):
         res = self.client.post('/register', data=data, content_type='application/json')
         res = self.client.post('/register', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(res.json()['code'], 1)
-        self.assertEqual(res.json()['info'], 'User already exists')   
+        self.assertEqual(res.json()['code'], -7)
+        self.assertEqual(res.json()['info'], 'Already exist')   
 
 class InfoTests(TestCase):
     # Initializer
