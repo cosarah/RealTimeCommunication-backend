@@ -3,7 +3,7 @@ services:
   web:
     image: registry.secoder.net/allright/app-backend:master
     volumes:
-      - sqlite_volume:/db/db.sqlite3
+      - sqlite_volume:/app/db/db.sqlite3
     ports:
       - "80:80"
 volumes:
