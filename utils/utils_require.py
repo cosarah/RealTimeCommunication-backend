@@ -3,6 +3,8 @@ from functools import wraps
 from utils.utils_request import request_failed
 
 MAX_CHAR_LENGTH = 255
+MAX_NAME_LENGTH = 10
+MAX_PASSWORD_LENGTH = 20
 
 # A decorator function for processing `require` in view function.
 def CheckRequire(check_fn):

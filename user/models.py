@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.db import models
 
-from utils.utils_require import MAX_CHAR_LENGTH
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH
 
 # 可采用Django REST framework 的序列化器避免手写序列化代码
 # 一般外键链接主键
@@ -27,10 +27,10 @@ from utils.utils_require import MAX_CHAR_LENGTH
 # 用户表
 class User(models.Model):
     # 隐私信息，可用于认证
-    name = models.CharField(max_length=MAX_CHAR_LENGTH, primary_key=True) # 用户名，作为主键
-    password = models.CharField(max_length=MAX_CHAR_LENGTH) # 密码 TODO: 加密
+    name = models.CharField(max_length=MAX_NAME_LENGTH, primary_key=True) # 用户名，作为主键
+    password = models.CharField(max_length=MAX_PASSWORD_LENGTH) # 密码 TODO: 加密
     phone = models.CharField(max_length=11, null=True, verbose_name='手机号码', db_index=True, unique=True) # 手机号码，可为空
-    email = models.EmailField(max_length=100, null=True, verbose_name='邮箱', db_index=True, unique=True) # 邮箱
+    email = models.EmailField(max_length=25, null=True, verbose_name='邮箱', db_index=True, unique=True) # 邮箱
 
     # 状态信息
     create_time = models.DateTimeField(default=timezone.now, verbose_name='创建时间')
@@ -38,7 +38,7 @@ class User(models.Model):
     logout_time = models.DateTimeField(default=None, null=True, verbose_name='登出时间') # 登出时间，可为空
     
     # 个性化信息
-    nick_name = models.CharField(max_length=MAX_CHAR_LENGTH, default='', verbose_name='昵称') # 昵称，可为空
+    nick_name = models.CharField(max_length=MAX_NAME_LENGTH, default='', verbose_name='昵称') # 昵称，可为空
     portrait = models.URLField(null=True, blank=True, verbose_name='头像') # 头像url
     PORTRAIT_CHOICES = ( # 头像类型
         (0, '空'),
@@ -46,7 +46,7 @@ class User(models.Model):
         (1, '默认1'), (2, '默认2'), (3, '默认3'), (4, '默认4'), (5, '默认5'), (6, '默认6'), (7, '默认7'), (8, '默认8'), (9, '默认9'), (10, '默认10')
     )
     portrait_type = models.IntegerField(choices=PORTRAIT_CHOICES, default=0, verbose_name='头像类型') # 头像类型
-    introduction = models.CharField(max_length=250, null=True, blank=True, verbose_name='个人简介') # 个人简介
+    introduction = models.CharField(max_length=40, null=True, blank=True, verbose_name='个人简介') # 个人简介
     birthday = models.DateField(default=None, null=True, verbose_name='生日') # 生日
     GENDER_CHOICES = ( # 性别
         (0, '未知'),
