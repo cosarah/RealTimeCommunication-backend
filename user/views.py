@@ -172,7 +172,7 @@ def fix_user_info(req: HttpRequest):
         return request_failed(0, "Missing or error type of [userName]", 400)
 
     # 核验数据格式
-    if not 
+    
 
 
 
