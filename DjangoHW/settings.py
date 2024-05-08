@@ -100,6 +100,13 @@ DATABASES = {
     }  # Change to MySQL or other databases for your FINAL project
 }
 
+# 测试数据库配置
+TEST = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'test_db.sqlite3',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
