@@ -16,6 +16,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASE_FOLDER = os.path.join(BASE_DIR, 'db')
+TEST_DATABASE_FOLDER = os.path.join(BASE_DIR, 'test_db')
 # 挂载点 app/db/db.sqlite3
 
 # Quick-start development settings - unsuitable for production
@@ -98,8 +99,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME':  Path(DATABASE_FOLDER) / 'db.sqlite3',
         'TEST': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': Path(DATABASE_FOLDER) / 'test_db.sqlite3'
         }
     }  # Change to MySQL or other databases for your FINAL project
 }
