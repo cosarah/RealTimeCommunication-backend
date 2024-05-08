@@ -97,15 +97,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME':  Path(DATABASE_FOLDER) / 'db.sqlite3',
+        'TEST': {
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }  # Change to MySQL or other databases for your FINAL project
-}
-
-# 测试数据库配置
-TEST = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'test_db.sqlite3',
-    }
 }
 
 # Password validation
