@@ -227,7 +227,7 @@ class Announcement(models.Model):
 class UserGroupConversation(models.Model):
     group_conversation = models.ForeignKey(GroupConversation, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE) 
-    alias = models.CharField(max_length=MAX_CHAR_LENGTH, null=True)  # 使用lambda获取nick_name    
+    alias = models.CharField(max_length=MAX_NAME_LENGTH, null=True)  # 使用lambda获取nick_name    
     join_time = models.DateTimeField(auto_now_add=True) # 用户入群时间
     IDENTITY_CHOICES = (
         (2, '群主'),

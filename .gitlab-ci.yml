@@ -8,6 +8,7 @@ stages:
 build:
   stage: build
   script:
+    - mkdir db
     - chmod +x start.sh # 增加执行权限
     - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
     - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG
@@ -20,6 +21,7 @@ build:
 build-dev:
   stage: build
   script:
+    - mkdir db
     - chmod +x start.sh # 增加执行权限
     - export BUILD_IMAGE_NAME=$CI_REGISTRY_IMAGE
     - export BUILD_IMAGE_TAG=$CI_COMMIT_REF_SLUG

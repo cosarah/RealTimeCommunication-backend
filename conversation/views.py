@@ -14,6 +14,33 @@ from user.views import validate_name
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
+def get_all_conversation_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    try:
+        user_name = req.GET.get('userName')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+
+    private_conversations = UserPrivateConversation.objects.filter(user=user)
+    private_conversation_list = []
+    for private_conversation in private_conversations:
+        private_conversation_list.append(private_conversation.serialize())
+    
+    group_conversations = UserGroupConversation.objects.filter(user=user)
+    group_conversation_list = []
+    for group_conversation in group_conversations:
+        group_conversation_list.append(group_conversation.serialize())
+    
+    return request_success(data={'privateConversationList': private_conversation_list})
+
+###############
+"""私聊系统"""
 def get_private_conversation_list(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
@@ -162,31 +189,8 @@ def delete_private_message(req: HttpRequest):
     private_message.delete()
     return request_success()
 
-def get_all_conversation_list(req: HttpRequest):
-    if req.method != 'GET':
-        return BAD_METHOD
-    try:
-        user_name = req.GET.get('userName')
-    except:
-        return BAD_PARAMS
-    
-    if not User.objects.filter(name=user_name).exists():
-        return USER_NOT_FOUND
-    
-    user = User.objects.get(name=user_name)
-
-    private_conversations = UserPrivateConversation.objects.filter(user=user)
-    private_conversation_list = []
-    for private_conversation in private_conversations:
-        private_conversation_list.append(private_conversation.serialize())
-    
-    group_conversations = UserGroupConversation.objects.filter(user=user)
-    group_conversation_list = []
-    for group_conversation in group_conversations:
-        group_conversation_list.append(group_conversation.serialize())
-    
-    return request_success(data={'privateConversationList': private_conversation_list})
-
+###############
+"""群聊管理"""
 def get_group_conversation_list(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
@@ -238,3 +242,273 @@ def create_group_conversation(req: HttpRequest):
     group_conversation.save()
     
     return request_success()
+
+def delete_group_conversation(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    group_conversation.delete()
+    user_group_conversation.delete()
+    
+    return request_success()
+
+
+###############
+"""群聊信息管理"""
+def get_group_message_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+        group_id = req.GET.get('groupId')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    group_conversation.last_read_time = get_timestamp()
+    group_conversation.save()
+    return request_success(data={'messageList': group_conversation.get_messages()})
+
+def send_group_message(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        message_text = require(body, "message", "string", err_msg="Missing or error type of [message]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    message = PrivateMessage(sender=user,text=message_text,conversation=group_conversation)
+    message.save()
+    group_conversation.last_message = message
+    group_conversation.save()
+    return request_success()
+
+def delete_group_message(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    if not PrivateMessage.objects.filter(id=message_id).exists():
+        return MESSAGE_NOT_FOUND
+    private_message = PrivateMessage.objects.get(id=message_id)
+
+    if private_message.conversation != group_conversation:
+        return request_failed(1, "Not message sender", 403)
+    
+    private_message.delete()
+    return request_success()
+
+###############
+"""群聊设置"""
+def set_group_title(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        group_title = require(body, "groupTitle", "string", err_msg="Missing or error type of [groupTitle]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    group_conversation.title = group_title
+    group_conversation.save()
+    return request_success()
+
+def set_announcement(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        announcement = require(body, "announcement", "string", err_msg="Missing or error type of [announcement]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    group_conversation.add_announcement(user, announcement)
+    return request_success()
+
+def set_owner(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        new_owner_name = require(body, "newOwnerName", "string", err_msg="Missing or error type of [newOwnerName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=new_owner_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    new_owner = User.objects.get(name=new_owner_name)
+    if not group_conversation.is_owner(user):
+        return request_failed(1, "Not group owner", 403)
+    group_conversation.set_owner(new_owner)
+    return request_success()
+
+def add_admin(req: HttpRequest):
+    return request_success()
+
+def remove_admin(req: HttpRequest):
+    return request_success()
+
+###############
+"""群聊成员管理"""
+def get_group_members(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+        group_id = req.GET.get('groupId')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    return request_success(data={'members': group_conversation.get_members()})
+
+
+
+
+def quit_group(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    group_conversation.remove_member(user)
+    user_group_conversation.delete()
+    return request_success()
+
+def fix_user_group_conversation(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        alias = require(body, "groupAlias", "string", err_msg="Missing or error type of [alias]")
+    except:
+        return BAD_PARAMS
+    
+    if not validate_name(alias):
+        return BAD_PARAMS
+
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 存在无效用户
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    user_group_conversation.alias = alias
+    user_group_conversation.save()
+    return request_success()
+################
