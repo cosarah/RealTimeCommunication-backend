@@ -6,6 +6,7 @@ README.md
 .pytest_cache
 **/migrations
 **/db.sqlite3
+db.sqlite3
 
 .coverage
 coverage-reports
