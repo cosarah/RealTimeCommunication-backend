@@ -10,6 +10,7 @@ from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
+from user.views import validate_name
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
@@ -185,3 +186,55 @@ def get_all_conversation_list(req: HttpRequest):
         group_conversation_list.append(group_conversation.serialize())
     
     return request_success(data={'privateConversationList': private_conversation_list})
+
+def get_group_conversation_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+
+    group_conversations = UserGroupConversation.objects.filter(user=user)
+    group_conversation_list = []
+    for group_conversation in group_conversations:
+        group_conversation_list.append(group_conversation.serialize())
+    
+    return request_success(data={'groupConversationList': group_conversation_list})
+
+def create_group_conversation(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_tilte = require(body, "groupTitle", "string", err_msg="Missing or error type of [groupName]")
+        group_members = require(body, "groupMembers", "list", err_msg="Missing or error type of [groupMembers]")
+    except:
+        return BAD_PARAMS
+    
+    if validate_name(group_tilte) == False:
+        return BAD_PARAMS
+
+    for member in group_members + [user_name]:
+        if not User.objects.filter(name=user_name).exists() or User.objects.get(name=member).is_closed: # 存在无效用户
+            return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    group_conversation = GroupConversation.objects.create(title=group_tilte)
+    user_group_conversation = UserGroupConversation.objects.create(user=user, group_conversation=group_conversation, identity=2)
+    user_group_conversation.save()
+
+    for member in group_members:
+        group_conversation.add_member(User.objects.get(name=member))
+
+    group_conversation.save()
+    
+    return request_success()

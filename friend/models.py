@@ -3,14 +3,17 @@ from user.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
+
+
 # Create your models here.
 # 好友关系表
 class Friendship(models.Model):
     from_user = models.ForeignKey(User, related_name='me', on_delete=models.CASCADE, db_index=True) # 该用户
     to_user = models.ForeignKey(User, related_name='friend', on_delete=models.CASCADE, db_index=True) # 好友用户
-    alias = models.CharField(max_length=100, null=True, help_text='好友备注名') # 好友备注
+    alias = models.CharField(max_length=MAX_NAME_LENGTH, null=True, help_text='好友备注名') # 好友备注
     tags = models.ManyToManyField("UserTag", related_name="tag_friendship", blank=True, help_text="标签") # 用户标签
-    description = models.CharField(max_length=250, null=True, help_text='好友描述') # 好友描述
+    description = models.CharField(max_length=MAX_INFO_LENGTH, null=True, help_text='好友描述') # 好友描述
     created_time = models.DateTimeField(auto_now_add=True) # 好友关系创建时间
     
     def friend_profile(self): # 好友信息
@@ -74,7 +77,7 @@ class FriendRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE) # 申请用户
     to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE) # 被申请用户
     updated_time = models.DateTimeField(default=timezone.now) # 申请时间
-    updated_message = models.CharField(max_length=250,default="", help_text='最后一条申请消息') # 最后一条申请消息
+    updated_message = models.CharField(max_length=MAX_CHAR_LENGTH, default="", help_text='最后一条申请消息') # 最后一条申请消息
     status = models.IntegerField(choices=((0, 'Pending'), (1, 'Accepted'), (2, 'Declined')), default=0) # 申请状态：等待、成功、被拒绝
     class Meta:
         unique_together = ('from_user', 'to_user') # 同一对用户只能有一个申请
@@ -136,11 +139,11 @@ class FriendRequest(models.Model):
 # 好友申请信息
 class FriendRequestMessage(models.Model):
     request = models.ForeignKey(FriendRequest, related_name='messages', on_delete=models.CASCADE) # 好友申请
-    message = models.CharField(max_length=250) # 消息内容
+    message = models.CharField(max_length=MAX_INFO_LENGTH) # 消息内容
     message_time = models.DateTimeField(default=timezone.now) # 消息时间
 
 class UserTag(models.Model): # 用户定义的标签集
-    name = models.CharField(max_length=100) # 标签名称
+    name = models.CharField(max_length=MAX_NAME_LENGTH) # 标签名称
     user = models.ForeignKey(User, related_name='user_tag', on_delete=models.CASCADE) # 标签所属用户
     friendships = models.ManyToManyField(Friendship, related_name='friendship_tag', blank=True) # 标签下的好友
     def __str__(self):
