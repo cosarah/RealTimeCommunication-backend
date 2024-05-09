@@ -35,12 +35,9 @@ class PrivateMessage(models.Model):
         ordering = ['-created_time']
 
     def read(self): # 被reciever读后，置为已读
-        if self.is_read:
-            return False
-        else:
-            self.is_read = True
-            self.save()
-            return True
+        self.is_read = True
+        self.save()
+
     def serialize(self):
         return {
             'id': self.id,
@@ -56,8 +53,9 @@ class UserPrivateConversation(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='private_conversations')
     friendship = models.ForeignKey(Friendship, on_delete=models.CASCADE, related_name='private_conversation_friends')
     conversation = models.ForeignKey(PrivateConversation, on_delete=models.CASCADE, related_name='private_conversations')
-    # receiver = models.ForeignKey(UserPrivateMessageReicever, on_delete=models.CASCADE, related_name='private_conversations')
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
+    messages = models.ManyToManyField(PrivateMessage) # 私聊消息列表
+
     def serialize(self):
         return {
             'id': self.id,
@@ -73,14 +71,33 @@ class UserPrivateConversation(models.Model):
             'lastMessage': self.conversation.get_last_message().serialize() if self.conversation.get_last_message() else None,
         }
     def read(self):
-        if self.unread_messages_count == 0:
-            return False
-        else:
-            friend = self.friendship.to_user
-            self.conversation.messages.filter(sender=friend, is_read=False).update(is_read=True)
-            self.unread_messages_count = 0
-            self.save()
-            return True
+        sender = self.friendship.to_user
+        print(sender.name)
+        unread_messages = self.messages.all().filter(is_read=False,sender=sender)
+        print(len(unread_messages))
+        for message in unread_messages:
+            message.read()
+        self.unread_messages_count = 0
+        self.save()
+        
+    def delete_message(self, message): # 删除私聊消息
+        self.messages.remove(message)
+
+    def add_message(self, message): # 添加私聊消息
+        self.messages.add(message)
+
+    def get_messages(self):
+        messages = self.messages.all().order_by('-created_time')
+        return [message.serialize() for message in messages]
+    
+    def get_last_message(self):
+        return PrivateMessage.objects.filter(conversation=self).order_by('-created_time').first()
+
+    def get_last_message(self): # 获取最后一条消息
+        return self.messages.order_by('-created_time').first()
+
+    def get_last_message_time(self): # 获取最后一条消息的时间
+        return self.get_last_message().created_time.strftime('%Y-%m-%d %H:%M:%S')
 
 class GroupMessage(models.Model):
     sender = models.ForeignKey(User, related_name='group_sender', on_delete=models.DO_NOTHING) # 用户删除之后，对应聊天记录并不删除

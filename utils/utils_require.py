@@ -2,10 +2,10 @@ from functools import wraps
 
 from utils.utils_request import request_failed
 
-MAX_CHAR_LENGTH = 255
-MAX_NAME_LENGTH = 10
-MAX_PASSWORD_LENGTH = 20
-MAX_INFO_LENGTH = 40
+MAX_CHAR_LENGTH = 255 # 群聊、私聊信息最大长度
+MAX_NAME_LENGTH = 10 # 用户名、昵称、好友标签、好友备注名、群聊名、群昵称、群公告最大长度
+MAX_PASSWORD_LENGTH = 20 # 密码最大长度
+MAX_INFO_LENGTH = 40 # 地址信息、好友申请信息最大长度
 
 # A decorator function for processing `require` in view function.
 def CheckRequire(check_fn):

@@ -7,9 +7,11 @@ urlpatterns = [
 
 # 私聊系统
     path('private', views.get_private_conversation_list), # 获取私信会话列表
-    path('private/message', views.get_private_message_list), # 获取私信消息列表
+    path('private/message', views.get_user_private_message_list), # 获取私信消息列表
+    path('private/message/all', views.get_private_message_list), # 获取全部私信消息列表
     path('private/message/send', views.send_private_message), # 发送消息
-    path('private//message/delete', views.delete_private_message), # 删除私信消息
+    path('private/message/delete', views.delete_private_message), # 删除私信消息
+    path('private/message/withdraw', views.withdraw_private_message), # 撤回私信消息
 
 # 群聊系统
     ## 群聊管理
@@ -21,6 +23,7 @@ urlpatterns = [
     path('group/messages', views.get_group_message_list), # 获取群组消息列表
     path('group/message/send', views.send_group_message), # 发送群组消息
     path('group/message/delete', views.delete_group_message), # 删除群组消息
+    path('group/message/withdraw', views.withdraw_group_message), # 撤回群组消息
     
     ## 群聊设置
     path('group/set/title', views.set_group_title), # 设置群名称

@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import Friendship
 from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -91,6 +91,42 @@ def get_private_message_list(req: HttpRequest):
     user_private_conversation.read()
     return request_success(data={'messageList': private_conversation.get_messages()})
 
+def get_user_private_message_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+        friend_name = req.GET.get('friendName')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+    if PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若不存在，则创建之
+        private_conversation = PrivateConversation.objects.get(user1=user,user2=friend_name)
+    elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
+        private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
+    else:
+        private_conversation = PrivateConversation.objects.create(user1=user,user2=friend)    
+    
+    if not Friendship.objects.filter(from_user=user,to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
+        return FRIENDSHIP_NOT_FOUND
+    friendship = Friendship.objects.get(from_user=user,to_user=friend)
+
+    if not UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
+        user_private_conversation = UserPrivateConversation.objects.create(user=user,friendship=friendship,conversation=private_conversation)
+    else:
+        user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
+
+
+    
+    user_private_conversation.read()
+    return request_success(data={'messageList': user_private_conversation.get_messages()})
+
 def send_private_message(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
@@ -114,6 +150,7 @@ def send_private_message(req: HttpRequest):
     if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
         return FRIENDSHIP_NOT_FOUND
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
+    friendship2 = Friendship.objects.get(from_user=friend, to_user=user)
     
     # 私聊
     if PrivateConversation.objects.filter(user1=user,user2=friend).exists():
@@ -135,11 +172,9 @@ def send_private_message(req: HttpRequest):
     if UserPrivateConversation.objects.filter(user=friend,conversation=private_conversation).exists():
         friend_private_conversation = UserPrivateConversation.objects.get(user=friend,conversation=private_conversation)
     else:
-        friend_private_conversation = UserPrivateConversation(user=friend,friendship=friendship,conversation=private_conversation)
+        friend_private_conversation = UserPrivateConversation(user=friend,friendship=friendship2,conversation=private_conversation)
         friend_private_conversation.save()
-    # 更新消息
-    friend_private_conversation.unread_messages_count += 1
-    friend_private_conversation.save()
+    
     
     # 发送消息
     message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation)
@@ -150,11 +185,48 @@ def send_private_message(req: HttpRequest):
     else:
         message = PrivateMessage(sender=user,text=message_text,conversation=private_conversation)
     message.save()
-    private_conversation.last_message = message
+
+
+    # 更新消息
+    friend_private_conversation.add_message(message)
+    friend_private_conversation.unread_messages_count += 1
+    friend_private_conversation.save()
+    user_private_conversation.add_message(message)
+    user_private_conversation.save()
     private_conversation.save()
-    return request_success()
+    return request_success({'messageId': message.id})
 
 def delete_private_message(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
+        message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)    
+    if not PrivateMessage.objects.filter(id=message_id).exists():
+        return MESSAGE_NOT_FOUND
+    private_message = PrivateMessage.objects.get(id=message_id)
+    
+    # 检查好友关系是否仍然存在
+    if not Friendship.objects.filter(from_user=friend,to_user=user).exists() or not Friendship.objects.filter(from_user=user,to_user=friend).exists():
+        return FRIENDSHIP_NOT_FOUND
+    
+    friendship = Friendship.objects.get(from_user=user,to_user=friend)
+    user_private_conversation = UserPrivateConversation.objects.get(user=user,friendship=friendship)
+    user_private_conversation.delete_message(private_message)
+    return request_success()
+
+def withdraw_private_message(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
     
@@ -238,11 +310,12 @@ def create_group_conversation(req: HttpRequest):
 
     for member in group_members:
         group_conversation.add_member(User.objects.get(name=member))
+        UserGroupConversation.objects.create(user=User.objects.get(name=member), group_conversation=group_conversation, identity=0)
 
     group_conversation.save()
-    
     return request_success()
 
+### TODO:删除群聊是否应当改为标记已删除而非删除数据库
 def delete_group_conversation(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
@@ -262,11 +335,14 @@ def delete_group_conversation(req: HttpRequest):
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
-    group_conversation.delete()
-    user_group_conversation.delete()
+    if user_group_conversation.identity != 2:
+        return PERMISSION_DENIED
     
+    group_conversation = UserGroupConversation.objects.get(user=user, id=group_id)
+    group_conversation.delete()
+
     return request_success()
+
 
 
 ###############
@@ -322,6 +398,33 @@ def send_group_message(req: HttpRequest):
     return request_success()
 
 def delete_group_message(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists():
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = user_group_conversation.group_conversation
+    if not PrivateMessage.objects.filter(id=message_id).exists():
+        return MESSAGE_NOT_FOUND
+    private_message = PrivateMessage.objects.get(id=message_id)
+
+
+
+def withdraw_group_message(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
     
