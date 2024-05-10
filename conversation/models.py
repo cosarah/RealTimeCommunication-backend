@@ -68,7 +68,7 @@ class UserPrivateConversation(models.Model):
             'friendIsOnline': self.friendship.to_user.is_online,
             
             'unreadMessageCount': self.unread_messages_count,
-            'lastMessage': self.conversation.get_last_message().serialize() if self.conversation.get_last_message() else None,
+            'lastMessage': self.get_last_message().serialize() if self.conversation.get_last_message() else None,
         }
     def read(self):
         sender = self.friendship.to_user
@@ -147,6 +147,13 @@ class GroupConversation(models.Model):
             'announcements': [announcement.serialize() for announcement in self.announcements.all()],
         }
     
+    def get_info(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'lastMessage': self.get_last_message().serialize() if self.get_last_message() else None,
+        }
+
     def get_all_participants(self):
         return self.members.all() | self.admins.all() | User.objects.filter(id=self.owner.id)
         
@@ -243,7 +250,7 @@ class Announcement(models.Model):
 
 class UserGroupConversation(models.Model):
     group_conversation = models.ForeignKey(GroupConversation, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE) 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='group_conversations') 
     alias = models.CharField(max_length=MAX_NAME_LENGTH, null=True)  # 使用lambda获取nick_name    
     join_time = models.DateTimeField(auto_now_add=True) # 用户入群时间
     IDENTITY_CHOICES = (

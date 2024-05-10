@@ -50,7 +50,7 @@ def get_private_conversation_list(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
@@ -281,7 +281,6 @@ def get_group_conversation_list(req: HttpRequest):
     group_conversation_list = []
     for group_conversation in group_conversations:
         group_conversation_list.append(group_conversation.serialize())
-    
     return request_success(data={'groupConversationList': group_conversation_list})
 
 def create_group_conversation(req: HttpRequest):
@@ -299,21 +298,29 @@ def create_group_conversation(req: HttpRequest):
     if validate_name(group_tilte) == False:
         return BAD_PARAMS
 
+    # 检验用户有效性
     for member in group_members + [user_name]:
-        if not User.objects.filter(name=user_name).exists() or User.objects.get(name=member).is_closed: # 存在无效用户
+        if not User.objects.filter(name=user_name).exists() or User.objects.get(name=member).is_closed:
             return USER_NOT_FOUND
     
+    # 检验好友关系有效性
     user = User.objects.get(name=user_name)
-    group_conversation = GroupConversation.objects.create(title=group_tilte)
+    for member in group_members:
+        friend = User.objects.get(name=member)
+        if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
+            return FRIENDSHIP_NOT_FOUND
+
+    # 创建群组
+    group_conversation = GroupConversation.objects.create(title=group_tilte,owner=user)
     user_group_conversation = UserGroupConversation.objects.create(user=user, group_conversation=group_conversation, identity=2)
     user_group_conversation.save()
-
+    ## 创建成员群组会话
     for member in group_members:
         group_conversation.add_member(User.objects.get(name=member))
         UserGroupConversation.objects.create(user=User.objects.get(name=member), group_conversation=group_conversation, identity=0)
 
     group_conversation.save()
-    return request_success()
+    return request_success({'groupId': group_conversation.id})
 
 ### TODO:删除群聊是否应当改为标记已删除而非删除数据库
 def delete_group_conversation(req: HttpRequest):
@@ -382,20 +389,19 @@ def send_group_message(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or not GroupConversation.objects.filter(id=group_id).exists():
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
+    group_conversation = GroupConversation.objects.get(id=group_id)
     message = PrivateMessage(sender=user,text=message_text,conversation=group_conversation)
     message.save()
-    group_conversation.last_message = message
-    group_conversation.save()
-    return request_success()
+    group_conversation.save() # 用于更新时间
+    return request_success({'messageId': message.id})
 
 def delete_group_message(req: HttpRequest):
     if req.method != 'POST':
@@ -551,7 +557,7 @@ def get_group_members(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
@@ -560,7 +566,7 @@ def get_group_members(req: HttpRequest):
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = user_group_conversation.group_conversation
-    return request_success(data={'members': group_conversation.get_members()})
+    return request_success(data={'members': group_conversation.serialize()})
 
 
 
