@@ -12,6 +12,15 @@ from utils.utils_jwt import generate_jwt_token, check_jwt_token
 # return_field函数根据提供的字段列表过滤出所需数据
 ### TODO:验证数据格式
 import re
+PORTRAIT_TYPE = list(range(-1,10))
+EMPTY_PORTRAIT = 0
+SELF_DEFINED_PORTRAIT = -1
+def validate_portrait_type(portrait_type):
+    return portrait_type in PORTRAIT_TYPE
+
+GENDER_TYPE = [0,1,2]
+def validate_gender_type(gender_type):
+    return gender_type in GENDER_TYPE
 
 def validate_username_password(username, password):
     # 用户名规则：由字母、数字、下划线组成，长度在 4 到 20 之间
@@ -31,22 +40,22 @@ def validate_username_password(username, password):
     return True, "用户名和密码符合规则"
 
 def validate_name(name):
-    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', name) is not None
+    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', name)
 
 def validate_password(password):
-    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password) is not None
+    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password)
 
 def validate_phone(phone):
     # 假设我们期望的电话号码格式为以1开头的11位数字
-    return re.match(r'^1\d{10}$', phone) is not None
+    return re.match(r'^1\d{10}$', phone)
 
 def validate_email(email):
     # 简单的电子邮件格式验证
-    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email) is not None
+    return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_birthday(birthday):
     # 假设我们期望的出生日期格式为YYYY-MM-DD
-    return re.match(r'^\d{4}-\d{2}-\d{2}$', birthday) is not None
+    return re.match(r'^\d{4}-\d{2}-\d{2}$', birthday)
 
 def validate_age(age):
     # 年龄应该是一个正整数
@@ -54,11 +63,11 @@ def validate_age(age):
 
 def validate_location(location):
     # 位置可以是一个简单的非空字符串
-    return re.match(r'^[a-zA-Z0-9_-]{3,16}$', location)
+    return len(location) <= MAX_INFO_LENGTH
 
 def validate_introduction(introduction):
     # 个人简介可以是一个简单的非空字符串
-    return re.match(r'^[a-zA-Z0-9_-]{0,40}$', introduction)
+    return len(introduction) <= MAX_INFO_LENGTH
 
 
 # 登录
@@ -170,29 +179,57 @@ def fix_user_info(req: HttpRequest):
         location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     except:
         return request_failed(0, "Missing or error type of [userName]", 400)
-
-    # 核验数据格式
     
-
-
-
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     if user.is_closed == True:
         return ALREADY_CLOSED
-    
-    if nick_name and isinstance(nick_name, str): 
-        user.nick_name = nick_name
-    if phone: user.phone = phone
-    if email: user.email = email
-    if gender: user.gender = gender
-    if portrait: user.portrait = portrait
-    if introduction: user.introduction = introduction
-    if birthday: user.birthday = birthday
-    if age: user.age = age
-    if location: user.location = location
+
+    # 核验数据格式
+    if nick_name:
+        if validate_name(nick_name): # 若有输入，则改变昵称
+            user.nick_name = nick_name
+        else:
+            return BAD_PARAMS
+    if phone: 
+        if validate_phone(phone): # 若有输入，则改变手机号
+            user.phone = phone
+        else:
+            return BAD_PARAMS
+    if email:
+        if validate_email(email): # 若有输入，则改变邮箱
+            user.email = email
+        else:
+            return BAD_PARAMS
+    if gender:
+        user.gender = gender
+    if portrait:
+        if validate_portrait_type(portrait): # 若有输入，则改变头像
+            user.portrait = portrait
+        else:
+            return BAD_PARAMS
+    if introduction:
+        if validate_introduction(introduction): # 若有输入，则改变简介
+            user.introduction = introduction
+        else:
+            return BAD_PARAMS
+    if birthday:
+        if validate_birthday(birthday): # 若有输入，则改变生日
+            user.birthday = birthday
+        else:
+            return BAD_PARAMS
+    if age:
+        if validate_age(age): # 若有输入，则改变年龄
+            user.age = age
+        else:    
+            return BAD_PARAMS
+    if location:
+        if validate_location(location): # 若有输入，则改变位置
+            user.location = location
+        else:
+            return BAD_PARAMS
     user.save()
     return request_success({"token": generate_jwt_token(user_name)})
 
@@ -220,7 +257,31 @@ def fix_password(req: HttpRequest):
     else:
         return request_failed(2, "Wrong password", 401)
 
+def fix_portrait_type(req: HttpRequest):
+    if req.method != "POST":
+        return BAD_METHOD
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        portrait_type = require(body, "portraitType", "int", err_msg="Missing or error type of [portraitType]")
+        portrait_code = require(body, "portraitCode", "string", err_msg="Missing or error type of [portraitCode]")
+    except:
+        return BAD_PARAMS
 
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed == True:
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not validate_portrait_type(portrait_type): # 不允许为空
+        return BAD_PARAMS
+    
+    user.portrait_type = portrait_type
+    if portrait_type == -1:
+        if len(portrait_code) >= MAX_CHAR_LENGTH:
+            return BAD_PARAMS
+        user.portrait = portrait_code
+    user.save()
+    return request_success({"token": generate_jwt_token(user_name), "portraitType": portrait_type, "portraitCode": portrait_code})
 
 # 注销
 @CheckRequire
