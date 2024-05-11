@@ -38,7 +38,7 @@ unit-test:
     - pip install -r requirements.txt
   script:
     - mkdir db
-    - python manage.py makemigrations user friend conversation message
+    - python manage.py makemigrations user friend conversation
     - python manage.py migrate
     - chmod +x test.sh # 增加执行权限
     - ./test.sh
