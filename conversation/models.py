@@ -199,13 +199,9 @@ class GroupConversation(models.Model):
         UserGroupConversation.objects.filter(group_conversation=self, user=user).delete()
         self.save()
 
-    def add_request(self, from_user, to_user, message): # 群成员邀请
-        if to_user in self.members.all():
-            return False
-        else:
-            GroupConversationRequest.objects.create(group_conversation=self, from_user=from_user, to_user=to_user, message=message)
-            return True
-        
+    def get_requests(self):
+        return [request.serialize() for request in self.requests.all().order_by('-updated_time')]
+
     def add_announcement(self, from_user, text): # 群公告
         Announcement.objects.create(group_conversation=self, text=text, created_by=from_user)
 
@@ -218,13 +214,26 @@ class GroupConversationRequest(models.Model):
     from_user = models.ForeignKey(User, related_name='from_user', on_delete=models.CASCADE)
     to_user = models.ForeignKey(User, related_name='to_user', on_delete=models.CASCADE)
     message = models.CharField(max_length=MAX_CHAR_LENGTH, null=True, blank=True)
-    created_time = models.DateTimeField(auto_now_add=True)
+    updated_time = models.DateTimeField(auto_now=True)
     STATUS_CHOICES = (
         (0, '等待处理'),
         (1, '已同意'),
         (2, '已拒绝'),
     )
     status = models.IntegerField(choices=STATUS_CHOICES, default=0) # 0-等待处理，1-已同意，2-已拒绝
+
+    class Meta:
+        unique_together = ('group_conversation', 'to_user')
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'fromUserName': self.from_user.name,
+            'toUserName': self.to_user.name,
+            'message': self.message,
+            'uopdatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'status': self.status,
+        }
 
     def accept(self):
         if self.status != 1:

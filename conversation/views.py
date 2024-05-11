@@ -4,9 +4,9 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import Friendship
-from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation, GroupMessage
+from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation, GroupMessage, GroupConversationRequest
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED, REQUEST_NOT_FOUND
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -533,6 +533,7 @@ def set_announcement(req: HttpRequest):
     group_conversation.add_announcement(user, announcement)
     return request_success()
 
+# 可以指定任意群中非注销用户作为群主（群成员or群管理），然后群主变为群管理
 def set_owner(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
@@ -566,18 +567,20 @@ def set_owner(req: HttpRequest):
     if not user_group_conversation.identity == 2: # 群主不可转让群主
         return PERMISSION_DENIED
     
-    # 删除新群主原群身份
+    # 删除新群主原来的群身份
     if new_owner_group_conversation.identity == 0: 
         group_conversation.members.remove(new_owner)
     if new_owner_group_conversation.identity == 1:
         group_conversation.admins.remove(new_owner)
 
+    # 设置新群主
     new_owner_group_conversation.identity = 2
     new_owner_group_conversation.save()
-
+    group_conversation.owner = new_owner
+    
+    # 修改原群主身份
     user_group_conversation.identity = 1
     user_group_conversation.save()
-    group_conversation.owner = new_owner
 
     group_conversation.admins.add(user)
     group_conversation.save()
@@ -610,20 +613,75 @@ def add_admin(req: HttpRequest):
         return PERMISSION_DENIED
 
     for new_admin_name in new_admin_name_list:
+        
         if not User.objects.filter(name=new_admin_name).exists() or User.objects.get(name=new_admin_name).is_closed:
             return USER_NOT_FOUND
         new_admin = User.objects.get(name=new_admin_name)
+        
         if not UserGroupConversation.objects.filter(user=new_admin, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=new_admin, group_conversation__id=group_id).is_kicked:
             return CONVERSATION_NOT_FOUND
         new_admin_group_conversation = UserGroupConversation.objects.get(user=new_admin, group_conversation__id=group_id)
+        
+        if new_admin_group_conversation.identity != 0: # 只有群成员可以被设置为群管理
+            return PERMISSION_DENIED
+
+        group_conversation.members.remove(new_admin)
+        group_conversation.admins.add(new_admin)
+        new_admin_group_conversation.identity = 1
+        new_admin_group_conversation.save()
+        group_conversation.save()
+    # 这样可能造成一个bug: 列表前面的用户设置成功，后半段设置不成功
+
     return request_success()
 
+
 def remove_admin(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        admin_name_list = require(body, "adminNameList", "list", err_msg="Missing or error type of [adminName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    if user_group_conversation.identity != 2: # 只有群主可移除管理员
+        return PERMISSION_DENIED
+
+    for admin_name in admin_name_list:
+        
+        if not User.objects.filter(name=admin_name).exists() or User.objects.get(name=admin_name).is_closed:
+            return USER_NOT_FOUND
+        admin = User.objects.get(name=admin_name)
+        
+        if not UserGroupConversation.objects.filter(user=admin, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=admin, group_conversation__id=group_id).is_kicked:
+            return CONVERSATION_NOT_FOUND
+        admin_group_conversation = UserGroupConversation.objects.get(user=admin, group_conversation__id=group_id)
+        
+        if admin_group_conversation.identity != 1: # 只有群管理可以被移除
+            return PERMISSION_DENIED
+
+        group_conversation.admins.remove(admin)
+        group_conversation.members.add(admin)
+        admin_group_conversation.identity = 0
+        admin_group_conversation.save()
+        group_conversation.save()
     return request_success()
 
 ###############
 """群聊成员管理"""
-def get_group_members(req: HttpRequest):
+def get_group_info(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
     
@@ -642,9 +700,154 @@ def get_group_members(req: HttpRequest):
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = user_group_conversation.group_conversation
-    return request_success(data={'members': group_conversation.serialize()})
+    return request_success(data=group_conversation.serialize())
+
+def get_group_invitation_list(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+        group_id = req.GET.get('groupId')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    
+    invitation_list = group_conversation.get_requests()
+    return request_success(data=invitation_list)
 
 
+def invite_group_member(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        friend_name = require(body, "friendName", "list", err_msg="Missing or error type of [inviteeName]")
+        message = require(body, "message", "string", err_msg="Missing or error type of [message]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    if not User.objects.filter(name=friend_name).exists() or User.objects.get(name=friend_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    friend = User.objects.get(name=friend_name)
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or Friendship.objects.filter(from_user=friend, to_user=user).exists():
+        return FRIENDSHIP_NOT_FOUND
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    # 若对象已在群中
+    if UserGroupConversation.objects.filter(user=friend, group_conversation__id=group_id).exists() or not UserGroupConversation.objects.get(user=friend, group_conversation__id=group_id).is_kicked:
+        return ALREADY_EXIST
+
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    
+    if user_group_conversation.identity != 0: # 群成员可邀请群成员
+        return PERMISSION_DENIED
+    
+    # 同一被邀请成员的申请信息只有一个，可被覆盖
+    if GroupConversationRequest.objects.filter(to_user=friend, group_conversation=group_conversation).exists():
+        group_conversation_request = GroupConversationRequest.objects.get(from_user=user, to_user=friend, group_conversation=group_conversation)
+        group_conversation_request.message = message
+        group_conversation_request.status = 0
+        group_conversation_request.save()
+    else:
+        group_conversation_request = GroupConversationRequest.objects.create(from_user=user, to_user=friend, group_conversation=group_conversation, message=message)
+    return request_success()
+
+def accept_group_invitation(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        request_id = require(body, "requestId", "string", err_msg="Missing or error type of [inviterName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    if not GroupConversationRequest.objects.filter(id=request_id, to_user=user, group_conversation=group_conversation).exists():
+        return REQUEST_NOT_FOUND
+    group_conversation_request = GroupConversationRequest.objects.get(id=request_id)
+    
+    # 已被通过
+    if group_conversation_request.status == 1:
+        return ALREADY_EXIST
+
+    inviter = group_conversation_request.from_user
+    invitee = group_conversation_request.to_user
+
+    if invitee.is_closed:
+        return USER_NOT_FOUND
+    if not UserGroupConversation.objects.filter(user=inviter, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=inviter, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    # 若对象已在群中
+    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() or not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
+        return ALREADY_EXIST
+    
+    group_conversation_request.status = 1
+    group_conversation_request.save()
+
+    group_conversation.members.add(invitee)
+    invitee_group_conversation = UserGroupConversation.objects.create(user=invitee, group_conversation=group_conversation, alias=invitee.nick_name, identity=0)
+    for message in group_conversation.messages.all():
+        invitee_group_conversation.messages.add(message)
+    group_conversation.save()
+    invitee_group_conversation.save()
+    return request_success()
+
+def reject_group_invitation(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        request_id = require(body, "requestId", "string", err_msg="Missing or error type of [inviterName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    if not GroupConversationRequest.objects.filter(id=request_id, to_user=user, group_conversation=group_conversation).exists():
+        return REQUEST_NOT_FOUND
+    group_conversation_request = GroupConversationRequest.objects.get(id=request_id)
+    
+    # 只能拒绝未被接受的邀请
+    if group_conversation_request.status != 0:
+        return PERMISSION_DENIED
+
+    group_conversation_request.status = 2
+    group_conversation_request.save()
+    return request_success()
 
 
 def quit_group(req: HttpRequest):
@@ -658,17 +861,21 @@ def quit_group(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
-    group_conversation.remove_member(user)
-    user_group_conversation.delete()
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    
+    if user_group_conversation.identity != 0: # 群成员可自由退出群
+        return PERMISSION_DENIED
+    else:
+        group_conversation.members.remove(user)
+        user_group_conversation.delete()
     return request_success()
 
 def fix_user_group_conversation(req: HttpRequest):
@@ -682,17 +889,18 @@ def fix_user_group_conversation(req: HttpRequest):
         alias = require(body, "groupAlias", "string", err_msg="Missing or error type of [alias]")
     except:
         return BAD_PARAMS
-    
-    if not validate_name(alias):
-        return BAD_PARAMS
 
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 存在无效用户
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    
+    if not validate_name(alias):
+        return BAD_PARAMS
+    
     user_group_conversation.alias = alias
     user_group_conversation.save()
     return request_success()

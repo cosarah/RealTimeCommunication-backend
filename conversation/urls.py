@@ -33,10 +33,11 @@ urlpatterns = [
     path('group/set/admin/remove', views.remove_admin), # 移除管理员
     
     ## 群聊成员管理
-    path('group/member', views.get_group_members), # 获取群成员列表
-    # path('group/member/invite', views.invite_group_member), # 成员邀请好友
-    # path('group/member/accept', views.accept_group_invitation), # 管理员接受邀请
-    # path('group/member/reject', views.reject_group_invitation), # 管理员拒绝邀请
+    path('group/member', views.get_group_info), # 获取群成员列表
+    path('group/member/request', views.get_group_invitation_list), # 获取群邀请列表
+    path('group/member/request/invite', views.invite_group_member), # 成员邀请好友
+    path('group/member/request/accept', views.accept_group_invitation), # 管理员接受邀请
+    path('group/member/request/reject', views.reject_group_invitation), # 管理员拒绝邀请
     # path('group/member/add', views.add_group_member), # 添加群成员
     # path('group/member/remove', views.remove_group_member), # 移除群成员
     path('group/member/quit', views.quit_group), # 退出群组
