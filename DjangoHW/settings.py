@@ -38,7 +38,6 @@ ALLOWED_HOSTS = [
 INSTALLED_APPS = [
     'user',
     'friend',
-    'message',
     'conversation',
     'corsheaders',
     'django.contrib.admin',

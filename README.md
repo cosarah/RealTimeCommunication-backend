@@ -16,7 +16,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
 ### 数据库
 
 ```bash
-python manage.py makemigrations user friend message conversation
+python manage.py makemigrations user friend conversation
 python manage.py migrate
 ```
 
@@ -27,7 +27,7 @@ python3 manage.py runserver
 
 
 ```bash
- python3 manage.py makemigrations user friend message conversation && python3 manage.py migrate
+ python3 manage.py makemigrations user friend conversation && python3 manage.py migrate
 ```
 
 
