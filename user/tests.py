@@ -9,6 +9,44 @@ import json
 import base64
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
+from user.views import validate_age, validate_email, validate_phone, validate_name, validate_password, validate_birthday, validate_gender_type, validate_introduction, validate_location, validate_portrait_type
+
+class ValidateFunctionsTestCase(TestCase):
+
+
+    def test_validate_age(self):
+        self.assertTrue(validate_age(18))
+        self.assertTrue(validate_age('19'))
+        self.assertFalse(validate_age(0))
+        self.assertTrue(validate_age(10.0))
+
+    def test_validate_email(self):
+        self.assertTrue(validate_email('test@example.com'))
+        self.assertFalse(validate_email('testexample.com'))
+        self.assertFalse(validate_email('test@example'))
+    def test_validate_phone(self):
+        self.assertTrue(validate_phone('12345678901'))
+        self.assertFalse(validate_phone('1234567890'))
+        self.assertFalse(validate_phone('1234567890a'))
+    def test_validate_name(self):
+        self.assertTrue(validate_name('Test_User123'))
+        self.assertFalse(validate_name('Test User'))
+        self.assertFalse(validate_name('Test_User123'*100))
+    def test_validate_password(self):
+        self.assertTrue(validate_password('password123'))
+        self.assertFalse(validate_password('pa'))
+        self.assertFalse(validate_password('p'*100))
+    def test_validate_birthday(self):
+        self.assertTrue(validate_birthday('1990-01-01'))
+        self.assertFalse(validate_birthday('199-13-01'))
+        self.assertFalse(validate_birthday('1990-1-32'))
+    def test_validate_gender_type(self):
+        self.assertTrue(validate_gender_type(1))
+        self.assertFalse(validate_gender_type('-1'))
+        self.assertFalse(validate_gender_type(3))
+    def test_validate_introduction(self):
+        self.assertTrue(validate_introduction('This is a test introduction.'))
+        self.assertFalse(validate_introduction('T'*1001))
 
 # -*- coding: UTF-8 -*-
 # Create your tests here.

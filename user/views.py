@@ -59,7 +59,7 @@ def validate_birthday(birthday):
 
 def validate_age(age):
     # 年龄应该是一个正整数
-    return age.isdigit() and int(age) > 0
+    return int(age) > 0
 
 def validate_location(location):
     # 位置可以是一个简单的非空字符串
@@ -175,7 +175,7 @@ def fix_user_info(req: HttpRequest):
         portrait = require(body, "portrait", "string", err_msg="Missing or error type of [portrait]")
         introduction = require(body, "introduction", "string", err_msg="Missing or error type of [introduction]")
         birthday = require(body, "birthday", "string", err_msg="Missing or error type of [birthday]")
-        age = require(body, "age", "string", err_msg="Missing or error type of [age]")
+        age = require(body, "age", "int", err_msg="Missing or error type of [age]")
         location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     except:
         return request_failed(0, "Missing or error type of [userName]", 400)
@@ -198,6 +198,7 @@ def fix_user_info(req: HttpRequest):
             user.phone = phone
         else:
             return BAD_PARAMS
+            
     if email:
         if validate_email(email): # 若有输入，则改变邮箱
             user.email = email
@@ -205,16 +206,13 @@ def fix_user_info(req: HttpRequest):
             return BAD_PARAMS
     if gender:
         user.gender = gender
-    if portrait:
-        if validate_portrait_type(portrait): # 若有输入，则改变头像
-            user.portrait = portrait
-        else:
-            return BAD_PARAMS
+
     if introduction:
         if validate_introduction(introduction): # 若有输入，则改变简介
             user.introduction = introduction
         else:
             return BAD_PARAMS
+
     if birthday:
         if validate_birthday(birthday): # 若有输入，则改变生日
             user.birthday = birthday
