@@ -255,7 +255,7 @@ def fix_password(req: HttpRequest):
     else:
         return request_failed(2, "Wrong password", 401)
 
-def fix_portrait_type(req: HttpRequest):
+def fix_portrait(req: HttpRequest):
     if req.method != "POST":
         return BAD_METHOD
     try:

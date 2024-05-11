@@ -69,3 +69,6 @@ python3 manage.py runserver
 ```bash
 python3 manage.py test
 ```
+
+注意消息删除后，不能跳转到对应位置
+前端需要判断消息是否在存在，再跳转

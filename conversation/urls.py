@@ -20,7 +20,7 @@ urlpatterns = [
     path('group/delete', views.delete_group_conversation), # 删除会话
 
     ## 群聊信息管理
-    path('group/messages', views.get_group_message_list), # 获取群组消息列表
+    path('group/message', views.get_group_message_list), # 获取群组消息列表
     path('group/message/send', views.send_group_message), # 发送群组消息
     path('group/message/delete', views.delete_group_message), # 删除群组消息
     path('group/message/withdraw', views.withdraw_group_message), # 撤回群组消息

@@ -4,7 +4,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from user.models import User
 from friend.models import Friendship
-from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation
+from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation, GroupMessage
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
@@ -393,14 +393,28 @@ def send_group_message(req: HttpRequest):
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or not GroupConversation.objects.filter(id=group_id).exists():
+    if not GroupConversation.objects.filter(id=group_id).exists() or not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = GroupConversation.objects.get(id=group_id)
-    message = PrivateMessage(sender=user,text=message_text,conversation=group_conversation)
+    message = GroupMessage(sender=user,text=message_text,conversation=group_conversation)
     message.save()
     group_conversation.save() # 用于更新时间
+
+    for member in group_conversation.get_all_participants():
+        if member == user:
+            user_group_conversation.add_message(message)
+        else:
+            if member.is_closed:
+                continue
+            if not UserGroupConversation.objects.filter(user=member, group_conversation=group_conversation).exists() or UserGroupConversation.objects.get(user=member, group_conversation=group_conversation).is_kicked:
+                continue
+            other_member_group_conversation = UserGroupConversation.objects.get(user=member, group_conversation=group_conversation)
+            other_member_group_conversation.add_message(message)
+            other_member_group_conversation.unread_messages_count += 1
+            other_member_group_conversation.save()
+
     return request_success({'messageId': message.id})
 
 def delete_group_message(req: HttpRequest):
@@ -423,10 +437,13 @@ def delete_group_message(req: HttpRequest):
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
-    if not PrivateMessage.objects.filter(id=message_id).exists():
+    if user_group_conversation.is_kicked:
+        return PERMISSION_DENIED
+    if not GroupMessage.objects.filter(id=message_id).exists():
         return MESSAGE_NOT_FOUND
-    private_message = PrivateMessage.objects.get(id=message_id)
+    group_message = GroupMessage.objects.get(id=message_id)
+    user_group_conversation.delete_message(group_message)
+    return request_success({'MessageId': group_message.id})
 
 
 
@@ -479,7 +496,7 @@ def set_group_title(req: HttpRequest):
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
@@ -508,7 +525,11 @@ def set_announcement(req: HttpRequest):
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
+    
+    if user_group_conversation.identity == 0: # 群成员不可设置群公告
+        return PERMISSION_DENIED
+
+    group_conversation = GroupConversation.objects.get(id=group_id)
     group_conversation.add_announcement(user, announcement)
     return request_success()
 
@@ -524,22 +545,77 @@ def set_owner(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=new_owner_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
+        return USER_NOT_FOUND
+    
+    if not User.objects.filter(name=new_owner_name).exists() or User.objects.get(name=new_owner_name).is_closed:
         return USER_NOT_FOUND
     
     user = User.objects.get(name=user_name)
-    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
+    new_owner = User.objects.get(name=new_owner_name)
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    if not UserGroupConversation.objects.filter(user=new_owner, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=new_owner, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    new_owner_group_conversation = UserGroupConversation.objects.get(user=new_owner, group_conversation__id=group_id)
+
+    group_conversation = GroupConversation(id=group_id)
+
+    if not user_group_conversation.identity == 2: # 群主不可转让群主
+        return PERMISSION_DENIED
+    
+    # 删除新群主原群身份
+    if new_owner_group_conversation.identity == 0: 
+        group_conversation.members.remove(new_owner)
+    if new_owner_group_conversation.identity == 1:
+        group_conversation.admins.remove(new_owner)
+
+    new_owner_group_conversation.identity = 2
+    new_owner_group_conversation.save()
+
+    user_group_conversation.identity = 1
+    user_group_conversation.save()
+    group_conversation.owner = new_owner
+
+    group_conversation.admins.add(user)
+    group_conversation.save()
+
+    return request_success()
+
+
+def add_admin(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        new_admin_name_list = require(body, "newAdminNameList", "list", err_msg="Missing or error type of [newAdminName]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
-    new_owner = User.objects.get(name=new_owner_name)
-    if not group_conversation.is_owner(user):
-        return request_failed(1, "Not group owner", 403)
-    group_conversation.set_owner(new_owner)
-    return request_success()
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    if user_group_conversation.identity != 2: # 只有群主可添加管理员
+        return PERMISSION_DENIED
 
-def add_admin(req: HttpRequest):
+    for new_admin_name in new_admin_name_list:
+        if not User.objects.filter(name=new_admin_name).exists() or User.objects.get(name=new_admin_name).is_closed:
+            return USER_NOT_FOUND
+        new_admin = User.objects.get(name=new_admin_name)
+        if not UserGroupConversation.objects.filter(user=new_admin, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=new_admin, group_conversation__id=group_id).is_kicked:
+            return CONVERSATION_NOT_FOUND
+        new_admin_group_conversation = UserGroupConversation.objects.get(user=new_admin, group_conversation__id=group_id)
     return request_success()
 
 def remove_admin(req: HttpRequest):

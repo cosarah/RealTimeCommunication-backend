@@ -46,6 +46,8 @@ class PrivateMessage(models.Model):
             'text': self.text,
             'isRead': self.is_read,
             'quoteId': self.quote.id if self.quote else None,
+            'quotedNum': len(self.private_quotes.all()),
+            'quotedMessages': [quote.id for quote in self.private_quotes.all()],
         }
     
 
@@ -106,6 +108,7 @@ class GroupMessage(models.Model):
     quote = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='group_quotes') # 删除引用后，引用对象为空
     conversation = models.ForeignKey('GroupConversation', on_delete=models.CASCADE, related_name='messages')
     read_user_list = models.ManyToManyField(User, related_name='read_group_message_users') # 已读用户列表
+
     class Meta:
         ordering = ['-created_time']
 
@@ -116,7 +119,15 @@ class GroupMessage(models.Model):
             'sendTime': self.created_time.strftime('%Y-%m-%d %H:%M:%S'),
             'text': self.text,
             'quoteId': self.quote.id if self.quote else None,
+            'quotedNum': len(self.group_quotes.all()),
+            'quotedMessages': [quote.id for quote in self.group_quotes.all()],
+            'readNum': len(self.read_user_list.all()),
+            'readUserList': [user.id for user in self.read_user_list.all()],
         }
+    def read_by(self, user): # 已读
+        self.read_user_list.add(user)
+    def get_read_user_list(self):
+        return self.read_user_list.all()
 
 class GroupConversation(models.Model):
     title = models.CharField(max_length=MAX_NAME_LENGTH, blank=True, null=True) # 对于群聊，有标题
@@ -260,6 +271,9 @@ class UserGroupConversation(models.Model):
     )
     identity = models.IntegerField(choices=IDENTITY_CHOICES, default=0) # 用户群身份，如群主、管理员等
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
+    is_kicked = models.BooleanField(default=False) # 是否被踢出群聊
+    messages = models.ManyToManyField(GroupMessage) # 私聊消息列表
+
 
     def get_group_member(self):
         return self.group_conversation.members.all()
@@ -282,6 +296,7 @@ class UserGroupConversation(models.Model):
     def serialize(self):
         return {
             'id': self.id,
+            'isKicked': self.is_kicked,
             'groupName': self.group_conversation.title,
             'userAlias': self.alias,
             'joinTime': self.join_time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -291,10 +306,14 @@ class UserGroupConversation(models.Model):
         }
     
     def read(self):
-        if self.unread_messages_count == 0:
-            return False
-        else:
-            self.group_conversation.messages.exclude(sender=self.user).filter(is_read=False).update(read_user_list=models.F('read_user_list') | User.objects.filter(id=self.user.id))
-            self.unread_messages_count = 0
-            self.save()
-            return True
+        self.group_conversation.messages.all().exclude(sender=self.user).filter(is_read=False).update(read_user_list=models.F('read_user_list') | User.objects.filter(name=self.user.name))
+        self.unread_messages_count = 0
+        self.save()
+
+    def add_message(self, message): # 添加群聊消息
+        self.messages.add(message)
+        self.save()
+
+    def delete_message(self, message): # 删除群聊消息
+        self.messages.remove(message)
+        self.save()
