@@ -330,3 +330,7 @@ class UserGroupConversation(models.Model):
     def delete_message(self, message): # 删除群聊消息
         self.messages.remove(message)
         self.save()
+
+    def get_messages(self):
+        messages = self.messages.all().order_by('-created_time')
+        return [message.serialize() for message in messages]

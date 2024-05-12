@@ -22,34 +22,18 @@ GENDER_TYPE = [0,1,2]
 def validate_gender_type(gender_type):
     return gender_type in GENDER_TYPE
 
-def validate_username_password(username, password):
-    # 用户名规则：由字母、数字、下划线组成，长度在 4 到 20 之间
-    if not re.match(r'^[a-zA-Z0-9_]{4,20}$', username):
-        return False, "用户名必须由字母、数字、下划线组成，长度在 4 到 20 之间"
-    
-    # 密码规则：长度至少为 8，包含至少一个小写字母、一个大写字母和一个数字
-    if len(password) < 8:
-        return False, "密码长度至少为 8"
-    if not any(char.islower() for char in password):
-        return False, "密码必须包含至少一个小写字母"
-    if not any(char.isupper() for char in password):
-        return False, "密码必须包含至少一个大写字母"
-    if not any(char.isdigit() for char in password):
-        return False, "密码必须包含至少一个数字"
-
-    return True, "用户名和密码符合规则"
-
-def validate_name(name):
+def validate_name(name): # 用户名密码都是只能有字母、数字、下划线、连字符组成的长度在[3,16]的字符串
     return re.match(r'^[a-zA-Z0-9_-]{3,16}$', name)
 
 def validate_nick_name(nick_name):
+    # 群名、群昵称、个人昵称、好友备注名限制
     return len(nick_name) <= MAX_NAME_LENGTH
 
 def validate_password(password):
     return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password)
 
 def validate_phone(phone):
-    # 假设我们期望的电话号码格式为以1开头的11位数字
+    # 期望的电话号码格式为以1开头的11位数字
     return re.match(r'^1\d{10}$', phone)
 
 def validate_email(email):
@@ -58,7 +42,7 @@ def validate_email(email):
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_birthday(birthday):
-    # 假设我们期望的出生日期格式为YYYY-MM-DD
+    # 期望的出生日期格式为YYYY-MM-DD
     return re.match(r'^\d{4}-\d{2}-\d{2}$', birthday)
 
 def validate_age(age):
@@ -67,7 +51,7 @@ def validate_age(age):
 
 # 位置、个人简介、好友申请、群申请消息长度
 def validate_info_length(introduction):
-    # 个人简介可以是一个简单的非空字符串
+    # 一个简单的非空字符串
     return len(introduction) <= MAX_INFO_LENGTH
 
 

@@ -825,13 +825,18 @@ def accept_group_invitation(req: HttpRequest):
     if not UserGroupConversation.objects.filter(user=inviter, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=inviter, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     # 若对象已在群中
-    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() or not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
+    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
         return ALREADY_EXIST
     
     group_conversation_request.status = 1
     group_conversation_request.save()
 
     group_conversation.members.add(invitee)
+
+    # 若曾经在群里面，则先删除该用户的全部记录，再进群
+    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
+        UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).delete()
+
     invitee_group_conversation = UserGroupConversation.objects.create(user=invitee, group_conversation=group_conversation, alias=invitee.nick_name, identity=0)
     for message in group_conversation.messages.all():
         invitee_group_conversation.messages.add(message)
@@ -880,7 +885,7 @@ def add_group_member(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
-        member_name = require(body, "memberName", "string", err_msg="Missing or error type of [memberNameList]")
+        invitee_name = require(body, "inviteeName", "string", err_msg="Missing or error type of [inviteeName]")
     except:
         return BAD_PARAMS
     
@@ -888,11 +893,10 @@ def add_group_member(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
-    if not User.objects.filter(name=member_name).exists() or User.objects.get(name=member_name).is_closed: # 无效用户
+    if not User.objects.filter(name=invitee_name).exists() or User.objects.get(name=invitee_name).is_closed: # 无效用户
         return USER_NOT_FOUND
-    member = User.objects.get(name=member_name)
+    invitee = User.objects.get(name=invitee_name)
 
-    
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
@@ -902,28 +906,20 @@ def add_group_member(req: HttpRequest):
         return PERMISSION_DENIED
     
     # 如果群成员不存在，则创建；若存在且曾经被踢出，则更新
-    if not UserGroupConversation.objects.filter(user=member, group_conversation__id=group_id).exists():
-        member_group_conversation = UserGroupConversation.objects.create(user=member, group_conversation=group_conversation, alias=member.nick_name, identity=0)
-        group_conversation.members.add(member)
-        for message in group_conversation.messages.all():
-            member_group_conversation.messages.add(message)
-        group_conversation.save()
-        member_group_conversation.save()
-    elif UserGroupConversation.objects.get(user=member, group_conversation__id=group_id).is_kicked:
-        UserGroupConversation.objects.filter(user=member, group_conversation__id=group_id).update(is_kicked=False)
-        group_conversation.members.add(member)
-        for message in group_conversation.messages.all():
-            if message not in member_group_conversation.messages.all():
-                member_group_conversation.messages.add(message)
-        group_conversation.save()
-        member_group_conversation.save()
-    else:
+    # 若对象已在群中
+    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
         return ALREADY_EXIST
+    # 若曾经在群里面且被踢出过，则先删除该用户的全部记录，再进群
+    if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
+        UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).delete()
+    invitee_group_conversation = UserGroupConversation.objects.create(user=invitee, group_conversation=group_conversation, alias=invitee.nick_name, identity=0)
+    for message in group_conversation.messages.all():
+        invitee_group_conversation.messages.add(message)
+    group_conversation.save()
+    invitee_group_conversation.save()
 
     return request_success()
-    
-    
-    
+ 
 
 
 def remove_group_member(req: HttpRequest):
