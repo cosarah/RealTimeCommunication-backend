@@ -330,7 +330,8 @@ class UserGroupConversation(models.Model):
     def read(self):
         for message in self.group_conversation.messages.all():
             if self.user not in message.read_user_list.all():
-                message.read_user_list.add(self.user)
+                if message.sender != self.user:
+                    message.read_user_list.add(self.user)
             else: break
         self.unread_messages_count = 0
         self.save()
