@@ -10,7 +10,7 @@ from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
-from user.views import validate_name
+from user.views import validate_nick_name
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
@@ -293,7 +293,7 @@ def create_group_conversation(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if validate_name(group_tilte) == False:
+    if validate_nick_name(group_tilte) == False:
         return BAD_PARAMS
 
     # 检验用户有效性
@@ -993,7 +993,7 @@ def fix_user_group_conversation(req: HttpRequest):
         return CONVERSATION_NOT_FOUND
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     
-    if not validate_name(alias):
+    if not validate_nick_name(alias):
         return BAD_PARAMS
     
     user_group_conversation.alias = alias

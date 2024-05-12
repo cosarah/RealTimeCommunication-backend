@@ -42,6 +42,9 @@ def validate_username_password(username, password):
 def validate_name(name):
     return re.match(r'^[a-zA-Z0-9_-]{3,16}$', name)
 
+def validate_nick_name(nick_name):
+    return len(nick_name) <= MAX_NAME_LENGTH
+
 def validate_password(password):
     return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password)
 
@@ -106,7 +109,7 @@ def register(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if len(user_name) > MAX_NAME_LENGTH or len(password) > MAX_PASSWORD_LENGTH:
+    if not validate_name(user_name) or not validate_password(password):
         return BAD_PARAMS
     
     if User.objects.filter(name=user_name).exists():
@@ -189,7 +192,7 @@ def fix_user_info(req: HttpRequest):
 
     # 核验数据格式
     if nick_name:
-        if validate_name(nick_name): # 若有输入，则改变昵称
+        if validate_nick_name(nick_name): # 若有输入，则改变昵称
             user.nick_name = nick_name
         else:
             return BAD_PARAMS
