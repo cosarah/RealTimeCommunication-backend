@@ -127,7 +127,7 @@ class GroupMessage(models.Model):
             'quotedNum': len(self.group_quotes.all()),
             'quotedMessages': [quote.id for quote in self.group_quotes.all()],
             'readNum': len(self.read_user_list.all()),
-            'readUserList': [user.id for user in self.read_user_list.all()],
+            'readUserList': [user.name for user in self.read_user_list.all()],
         }
     def read_by(self, user): # 已读
         self.read_user_list.add(user)
@@ -171,7 +171,7 @@ class GroupConversation(models.Model):
         }
 
     def get_all_participants(self):
-        return self.members.all() | self.admins.all() | User.objects.filter(id=self.owner.id)
+        return self.members.all() | self.admins.all() | User.objects.filter(name=self.owner.name)
         
     def transfer_owner(self, from_user, to_user): # 群主转让
         from_user_conversation = UserGroupConversation.objects.get(group_conversation=self, user=from_user)
