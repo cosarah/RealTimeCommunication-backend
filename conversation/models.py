@@ -344,5 +344,5 @@ class UserGroupConversation(models.Model):
         self.save()
 
     def get_messages(self):
-        messages = self.messages.all().order_by('-updated_time')
+        messages = self.messages.all().order_by('-created_time')
         return [message.serialize() for message in messages]
