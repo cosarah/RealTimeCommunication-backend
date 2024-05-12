@@ -58,6 +58,9 @@ class UserPrivateConversation(models.Model):
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
     messages = models.ManyToManyField(PrivateMessage) # 私聊消息列表
     updated_time = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-updated_time']
+        unique_together = ('user', 'friendship')
 
     def serialize(self):
         return {
@@ -286,7 +289,11 @@ class UserGroupConversation(models.Model):
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
     is_kicked = models.BooleanField(default=False) # 是否被踢出群聊
     messages = models.ManyToManyField(GroupMessage) # 私聊消息列表
+    updated_time = models.DateTimeField(auto_now=True) # 更新时间
 
+    class Meta:
+        ordering = ['updated_time']
+        unique_together = ('group_conversation', 'user')
 
     def get_group_member(self):
         return self.group_conversation.members.all()
@@ -313,6 +320,7 @@ class UserGroupConversation(models.Model):
             'groupName': self.group_conversation.title,
             'userAlias': self.alias,
             'joinTime': self.join_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'updatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
             'identity': self.identity,
             'unreadMessageCount': self.unread_messages_count,
             'groupConversation': self.group_conversation.serialize()
