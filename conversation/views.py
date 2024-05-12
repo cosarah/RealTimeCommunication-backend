@@ -10,7 +10,7 @@ from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
-from user.views import validate_nick_name
+from user.views import validate_nick_name, validate_info_length
 from django.utils import timezone
 
 # Create your views here.
@@ -762,11 +762,10 @@ def get_group_invitation_list(req: HttpRequest):
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
-    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = GroupConversation.objects.get(id=group_id)
     
     invitation_list = group_conversation.get_requests()
-    return request_success(data=invitation_list)
+    return request_success(data={'requests':invitation_list})
 
 
 def invite_group_member(req: HttpRequest):
@@ -777,29 +776,34 @@ def invite_group_member(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
-        friend_name = require(body, "friendName", "list", err_msg="Missing or error type of [inviteeName]")
+        friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [inviteeName]")
         message = require(body, "message", "string", err_msg="Missing or error type of [message]")
     except:
         return BAD_PARAMS
-    
+    if not validate_info_length(message):
+        return BAD_PARAMS
+    if message == "":
+        message = "Invite my friend."
+
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     if not User.objects.filter(name=friend_name).exists() or User.objects.get(name=friend_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-    if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or Friendship.objects.filter(from_user=friend, to_user=user).exists():
+    if not Friendship.objects.filter(from_user=user, to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
         return FRIENDSHIP_NOT_FOUND
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
+    
     # 若对象已在群中
-    if UserGroupConversation.objects.filter(user=friend, group_conversation__id=group_id).exists() or not UserGroupConversation.objects.get(user=friend, group_conversation__id=group_id).is_kicked:
+    if UserGroupConversation.objects.filter(user=friend, group_conversation__id=group_id).exists() and not UserGroupConversation.objects.get(user=friend, group_conversation__id=group_id).is_kicked:
         return ALREADY_EXIST
 
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = GroupConversation.objects.get(id=group_id)
     
-    if user_group_conversation.identity != 0: # 群成员可邀请群成员
+    if user_group_conversation.identity != 0: # 只有群成员可邀请群成员
         return PERMISSION_DENIED
     
     # 同一被邀请成员的申请信息只有一个，可被覆盖
@@ -820,32 +824,30 @@ def accept_group_invitation(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
-        request_id = require(body, "requestId", "string", err_msg="Missing or error type of [inviterName]")
+        invitee_name = require(body, "inviteeName", "string", err_msg="Missing or error type of [inviteeName]")
     except:
         return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
+    if not User.objects.filter(name=invitee_name).exists() or User.objects.get(name=invitee_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    invitee = User.objects.get(name=invitee_name)
+
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     group_conversation = GroupConversation.objects.get(id=group_id)
-    if not GroupConversationRequest.objects.filter(id=request_id, to_user=user, group_conversation=group_conversation).exists():
+    if not GroupConversationRequest.objects.filter(to_user=invitee, group_conversation=group_conversation).exists():
         return REQUEST_NOT_FOUND
-    group_conversation_request = GroupConversationRequest.objects.get(id=request_id)
+    group_conversation_request = GroupConversationRequest.objects.get(to_user=invitee, group_conversation=group_conversation)
     
     # 已被通过
-    if group_conversation_request.status == 1:
+    if group_conversation_request.status == 1 or UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
         return ALREADY_EXIST
 
-    inviter = group_conversation_request.from_user
-    invitee = group_conversation_request.to_user
 
-    if invitee.is_closed:
-        return USER_NOT_FOUND
-    if not UserGroupConversation.objects.filter(user=inviter, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=inviter, group_conversation__id=group_id).is_kicked:
-        return CONVERSATION_NOT_FOUND
     # 若对象已在群中
     if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and not UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
         return ALREADY_EXIST
@@ -874,20 +876,24 @@ def reject_group_invitation(req: HttpRequest):
         body = json.loads(req.body.decode("utf-8"))
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
-        request_id = require(body, "requestId", "string", err_msg="Missing or error type of [inviterName]")
+        invitee_name = require(body, "inviteeName", "string", err_msg="Missing or error type of [inviteeName]")
     except:
         return BAD_PARAMS
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
+    if not User.objects.filter(name=invitee_name).exists() or User.objects.get(name=invitee_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    invitee = User.objects.get(name=invitee_name)
+
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
         return CONVERSATION_NOT_FOUND
     
     group_conversation = GroupConversation.objects.get(id=group_id)
-    if not GroupConversationRequest.objects.filter(id=request_id, to_user=user, group_conversation=group_conversation).exists():
+    if not GroupConversationRequest.objects.filter(to_user=invitee, group_conversation=group_conversation).exists():
         return REQUEST_NOT_FOUND
-    group_conversation_request = GroupConversationRequest.objects.get(id=request_id)
+    group_conversation_request = GroupConversationRequest.objects.get(to_user=invitee, group_conversation=group_conversation)
     
     # 只能拒绝未被接受的邀请
     if group_conversation_request.status != 0:
