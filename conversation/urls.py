@@ -18,6 +18,7 @@ urlpatterns = [
     path('group', views.get_group_conversation_list), # 获取群组会话列表
     path('group/create', views.create_group_conversation), # 创建会话
     path('group/delete', views.delete_group_conversation), # 删除会话
+    path('group/announcements', views.get_group_announcements), # 获取群公告列表
 
     ## 群聊信息管理
     path('group/message', views.get_group_message_list), # 获取群组消息列表

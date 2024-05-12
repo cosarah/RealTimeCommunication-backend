@@ -203,6 +203,9 @@ class GroupConversation(models.Model):
     def get_requests(self):
         return [request.serialize() for request in self.requests.all().order_by('-updated_time')]
 
+    def get_announcements(self):
+        return [announcement.serialize() for announcement in self.announcements.all()]
+
     def add_announcement(self, from_user, text): # 群公告
         Announcement.objects.create(group_conversation=self, text=text, created_by=from_user)
 

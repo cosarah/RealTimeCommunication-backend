@@ -354,6 +354,25 @@ def delete_group_conversation(req: HttpRequest):
     return request_success()
 
 
+def get_group_announcements(req: HttpRequest):
+    if req.method != 'GET':
+        return BAD_METHOD
+    
+    try:
+        user_name = req.GET.get('userName')
+        group_id = req.GET.get('groupId')
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    # 被踢出的不可以查看公告
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    return request_success(data={'announcements': group_conversation.get_announcements()})
+
 
 ###############
 """群聊信息管理"""
@@ -606,7 +625,7 @@ def add_admin(req: HttpRequest):
     user = User.objects.get(name=user_name)
 
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
-        return CONVERSATION_NOT_FOUND
+        return CONVERSATION_NOT_FOUND # 其实这里设置成USER_NOT_FOUND更合适
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = GroupConversation.objects.get(id=group_id)
@@ -624,7 +643,7 @@ def add_admin(req: HttpRequest):
         new_admin_group_conversation = UserGroupConversation.objects.get(user=new_admin, group_conversation__id=group_id)
         
         if new_admin_group_conversation.identity != 0: # 只有群成员可以被设置为群管理
-            return PERMISSION_DENIED
+            return ALREADY_EXIST # 这里不等于0时，只可能该用户已经为是群管理
 
         group_conversation.members.remove(new_admin)
         group_conversation.admins.add(new_admin)
@@ -632,6 +651,7 @@ def add_admin(req: HttpRequest):
         new_admin_group_conversation.save()
         group_conversation.save()
     # 这样可能造成一个bug: 列表前面的用户设置成功，后半段设置不成功
+    # 这样的bug不存在，因为先返回请求失败，不做改变
 
     return request_success()
 
