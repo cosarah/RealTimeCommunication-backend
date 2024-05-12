@@ -106,9 +106,9 @@ def get_user_private_message_list(req: HttpRequest):
     
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
-    if PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若不存在，则创建之
+    if not PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若不存在，则创建之
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend_name)
-    elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
+    elif not PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else:
         private_conversation = PrivateConversation.objects.create(user1=user,user2=friend)    
@@ -121,8 +121,6 @@ def get_user_private_message_list(req: HttpRequest):
         user_private_conversation = UserPrivateConversation.objects.create(user=user,friendship=friendship,conversation=private_conversation)
     else:
         user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
-
-
     
     user_private_conversation.read()
     return request_success(data={'messageList': user_private_conversation.get_messages()})
@@ -153,9 +151,9 @@ def send_private_message(req: HttpRequest):
     friendship2 = Friendship.objects.get(from_user=friend, to_user=user)
     
     # 私聊
-    if PrivateConversation.objects.filter(user1=user,user2=friend).exists():
+    if not PrivateConversation.objects.filter(user1=user,user2=friend).exists():
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
-    elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
+    elif not PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else: # create it
         private_conversation = PrivateConversation(user1=user,user2=friend)
@@ -354,6 +352,7 @@ def delete_group_conversation(req: HttpRequest):
 
 ###############
 """群聊信息管理"""
+# TODO:读取消息
 def get_group_message_list(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
@@ -364,18 +363,15 @@ def get_group_message_list(req: HttpRequest):
     except:
         return BAD_PARAMS
     
-    if not User.objects.filter(name=user_name).exists():
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
-    
     user = User.objects.get(name=user_name)
+    # 被踢出的仍可以查看消息
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
         return CONVERSATION_NOT_FOUND
-    
+    # 按怎样的时间排序？
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
-    group_conversation = user_group_conversation.group_conversation
-    group_conversation.last_read_time = get_timestamp()
-    group_conversation.save()
-    return request_success(data={'messageList': group_conversation.get_messages()})
+    return request_success(data={'messageList': user_group_conversation.get_messages()})
 
 def send_group_message(req: HttpRequest):
     if req.method != 'POST':

@@ -57,6 +57,7 @@ class UserPrivateConversation(models.Model):
     conversation = models.ForeignKey(PrivateConversation, on_delete=models.CASCADE, related_name='private_conversations')
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
     messages = models.ManyToManyField(PrivateMessage) # 私聊消息列表
+    updated_time = models.DateTimeField(auto_now=True)
 
     def serialize(self):
         return {
