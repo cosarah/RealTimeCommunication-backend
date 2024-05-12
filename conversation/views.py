@@ -850,6 +850,105 @@ def reject_group_invitation(req: HttpRequest):
     return request_success()
 
 
+
+def add_group_member(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        member_name = require(body, "memberName", "string", err_msg="Missing or error type of [memberNameList]")
+    except:
+        return BAD_PARAMS
+    
+    # 判断无效用户
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    if not User.objects.filter(name=member_name).exists() or User.objects.get(name=member_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    member = User.objects.get(name=member_name)
+
+    
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    
+    if not user_group_conversation.identity >= 1: # 群主或管理员可添加群成员
+        return PERMISSION_DENIED
+    
+    # 如果群成员不存在，则创建；若存在且曾经被踢出，则更新
+    if not UserGroupConversation.objects.filter(user=member, group_conversation__id=group_id).exists():
+        member_group_conversation = UserGroupConversation.objects.create(user=member, group_conversation=group_conversation, alias=member.nick_name, identity=0)
+        group_conversation.members.add(member)
+        for message in group_conversation.messages.all():
+            member_group_conversation.messages.add(message)
+        group_conversation.save()
+        member_group_conversation.save()
+    elif UserGroupConversation.objects.get(user=member, group_conversation__id=group_id).is_kicked:
+        UserGroupConversation.objects.filter(user=member, group_conversation__id=group_id).update(is_kicked=False)
+        group_conversation.members.add(member)
+        for message in group_conversation.messages.all():
+            if message not in member_group_conversation.messages.all():
+                member_group_conversation.messages.add(message)
+        group_conversation.save()
+        member_group_conversation.save()
+    else:
+        return ALREADY_EXIST
+
+    return request_success()
+    
+    
+    
+
+
+def remove_group_member(req: HttpRequest):
+    if req.method != 'POST':
+        return BAD_METHOD
+    
+    try:
+        body = json.loads(req.body.decode("utf-8"))
+        user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
+        group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
+        member_name = require(body, "memberName", "string", err_msg="Missing or error type of [memberNameList]")
+    except:
+        return BAD_PARAMS
+    
+    if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    user = User.objects.get(name=user_name)
+    if not User.objects.filter(name=member_name).exists() or User.objects.get(name=member_name).is_closed: # 无效用户
+        return USER_NOT_FOUND
+    member = User.objects.get(name=member_name)
+    
+    if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=user, group_conversation__id=group_id).is_kicked:
+        return CONVERSATION_NOT_FOUND
+    user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
+    
+    if not UserGroupConversation.objects.filter(user=member, group_conversation__id=group_id).exists() or UserGroupConversation.objects.get(user=member, group_conversation__id=group_id).is_kicked:
+        return USER_NOT_FOUND
+    member_group_conversation = UserGroupConversation.objects.get(user=member, group_conversation__id=group_id)
+    
+    # 权限更高才能踢出对方
+    if not user_group_conversation.identity >= member_group_conversation.identity: 
+        return PERMISSION_DENIED
+    
+    if member_group_conversation.identity == 0: # 群主或管理员可踢出群成员
+        group_conversation.members.remove(member)
+        member_group_conversation.is_kicked = 1
+        member_group_conversation.save()
+    elif member_group_conversation.identity == 1: # 群主可踢出管理员
+        group_conversation.admins.remove(member)
+        member_group_conversation.is_kicked = 1
+        member_group_conversation.save()
+
+    return request_success({})    
+
+
 def quit_group(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD

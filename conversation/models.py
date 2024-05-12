@@ -70,7 +70,7 @@ class UserPrivateConversation(models.Model):
             'friendIsOnline': self.friendship.to_user.is_online,
             
             'unreadMessageCount': self.unread_messages_count,
-            'lastMessage': self.get_last_message().serialize() if self.conversation.get_last_message() else None,
+            'lastMessage': self.get_last_message().serialize() if self.get_last_message() else None,
         }
     def read(self):
         sender = self.friendship.to_user

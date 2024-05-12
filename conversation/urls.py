@@ -38,8 +38,8 @@ urlpatterns = [
     path('group/member/request/invite', views.invite_group_member), # 成员邀请好友
     path('group/member/request/accept', views.accept_group_invitation), # 管理员接受邀请
     path('group/member/request/reject', views.reject_group_invitation), # 管理员拒绝邀请
-    # path('group/member/add', views.add_group_member), # 添加群成员
-    # path('group/member/remove', views.remove_group_member), # 移除群成员
+    path('group/member/add', views.add_group_member), # 添加群成员
+    path('group/member/remove', views.remove_group_member), # 移除群成员
     path('group/member/quit', views.quit_group), # 退出群组
     path('group/member/fix', views.fix_user_group_conversation) # 修改会话中用户信息
 ]
