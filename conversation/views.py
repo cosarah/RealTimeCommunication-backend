@@ -11,6 +11,7 @@ from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from user.views import validate_nick_name
+from django.utils import timezone
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
@@ -393,8 +394,16 @@ def get_group_message_list(req: HttpRequest):
     # 被踢出的仍可以查看消息
     if not UserGroupConversation.objects.filter(user=user, group_conversation__id=group_id).exists():
         return CONVERSATION_NOT_FOUND
-    # 按怎样的时间排序？
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
+    
+    # 阅读消息
+    if user_group_conversation.is_kicked: # 若被踢了，则只能阅读历史消息
+        user_group_conversation.unread_messages_count = 0
+        user_group_conversation.save()
+    else:
+        user_group_conversation.read()
+        
+    # 返回消息列表
     return request_success(data={'messageList': user_group_conversation.get_messages()})
 
 def send_group_message(req: HttpRequest):
@@ -433,10 +442,12 @@ def send_group_message(req: HttpRequest):
             other_member_group_conversation = UserGroupConversation.objects.get(user=member, group_conversation=group_conversation)
             other_member_group_conversation.add_message(message)
             other_member_group_conversation.unread_messages_count += 1
+            other_member_group_conversation.updated_time = timezone.now()
             other_member_group_conversation.save()
 
     return request_success({'messageId': message.id})
 
+# 只在用户本地删除
 def delete_group_message(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
@@ -448,6 +459,7 @@ def delete_group_message(req: HttpRequest):
         message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
     except:
         return BAD_PARAMS
+    
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -462,7 +474,9 @@ def delete_group_message(req: HttpRequest):
     if not GroupMessage.objects.filter(id=message_id).exists():
         return MESSAGE_NOT_FOUND
     group_message = GroupMessage.objects.get(id=message_id)
+    
     user_group_conversation.delete_message(group_message)
+    
     return request_success({'MessageId': group_message.id})
 
 

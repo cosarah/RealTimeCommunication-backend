@@ -2,6 +2,7 @@ from django.db import models
 from user.models import User
 from friend.models import Friendship
 from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_INFO_LENGTH
+from django.utils import timezone
 
 # Create your models here.
 
@@ -289,7 +290,7 @@ class UserGroupConversation(models.Model):
     unread_messages_count = models.PositiveIntegerField(default=0) # 未读消息数
     is_kicked = models.BooleanField(default=False) # 是否被踢出群聊
     messages = models.ManyToManyField(GroupMessage) # 私聊消息列表
-    updated_time = models.DateTimeField(auto_now=True) # 更新时间
+    updated_time = models.DateTimeField(default=timezone.now) # 更新时间
 
     class Meta:
         ordering = ['updated_time']
@@ -327,7 +328,10 @@ class UserGroupConversation(models.Model):
         }
     
     def read(self):
-        self.group_conversation.messages.all().exclude(sender=self.user).filter(is_read=False).update(read_user_list=models.F('read_user_list') | User.objects.filter(name=self.user.name))
+        for message in self.group_conversation.messages.all():
+            if self.user not in message.read_user_list.all():
+                message.read_user_list.add(self.user)
+            else: break
         self.unread_messages_count = 0
         self.save()
 
@@ -340,5 +344,5 @@ class UserGroupConversation(models.Model):
         self.save()
 
     def get_messages(self):
-        messages = self.messages.all().order_by('-created_time')
+        messages = self.messages.all().order_by('-updated_time')
         return [message.serialize() for message in messages]
