@@ -53,7 +53,8 @@ def validate_phone(phone):
     return re.match(r'^1\d{10}$', phone)
 
 def validate_email(email):
-    # 简单的电子邮件格式验证
+    # var: 单词字符、点、连字符、下划线
+    # 简单的电子邮件格式验证：var@var.var
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_birthday(birthday):
@@ -64,11 +65,8 @@ def validate_age(age):
     # 年龄应该是一个正整数
     return int(age) > 0
 
-def validate_location(location):
-    # 位置可以是一个简单的非空字符串
-    return len(location) <= MAX_INFO_LENGTH
-
-def validate_introduction(introduction):
+# 位置、个人简介、好友申请、群申请消息长度
+def validate_info_length(introduction):
     # 个人简介可以是一个简单的非空字符串
     return len(introduction) <= MAX_INFO_LENGTH
 
@@ -211,7 +209,7 @@ def fix_user_info(req: HttpRequest):
         user.gender = gender
 
     if introduction:
-        if validate_introduction(introduction): # 若有输入，则改变简介
+        if validate_info_length(introduction): # 若有输入，则改变简介
             user.introduction = introduction
         else:
             return BAD_PARAMS
@@ -227,7 +225,7 @@ def fix_user_info(req: HttpRequest):
         else:    
             return BAD_PARAMS
     if location:
-        if validate_location(location): # 若有输入，则改变位置
+        if validate_info_length(location): # 若有输入，则改变位置
             user.location = location
         else:
             return BAD_PARAMS

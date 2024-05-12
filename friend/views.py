@@ -7,9 +7,10 @@ from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserT
 from conversation.models import PrivateConversation
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, ALREADY_CLOSED
-from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
+from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
+from user.views import validate_info_length, validate_nick_name
 
 # Create your views here.
 # 获取好友列表
@@ -76,6 +77,8 @@ def add_friend(req: HttpRequest):
         return ALREADY_CLOSED
     if apply_message == "":
         apply_message = "你好，我是"+user.name+"，很高兴认识你。"
+    elif not validate_info_length(apply_message):
+        return BAD_PARAMS
 
     if Friendship.objects.filter(from_user=user, to_user=friend).exists() and Friendship.objects.filter(from_user=friend, to_user=user).exists(): # 已经是好友
         return ALREADY_EXIST
@@ -182,7 +185,9 @@ def fix_friend_alias(req: HttpRequest):
         alias = require(body, "alias", "string", err_msg="Missing or error type of [alias]")
     except:
         return BAD_PARAMS
-    
+    if not validate_nick_name(alias):
+        return BAD_PARAMS
+
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     if not User.objects.filter(name=friend_name).exists():
@@ -319,6 +324,9 @@ def fix_friend_profile(req:HttpRequest):
     if not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     
+    if not validate_nick_name(alias) or not validate_nick_name(tag) or not validate_info_length(description):
+        return BAD_PARAMS
+
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     if friend.is_closed:

@@ -1,7 +1,7 @@
 from django.db import models
 from user.models import User
 from friend.models import Friendship
-from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_INFO_LENGTH
 
 # Create your models here.
 
@@ -255,7 +255,7 @@ class GroupConversationRequest(models.Model):
 
 class Announcement(models.Model): 
     group_conversation = models.ForeignKey(GroupConversation, related_name='announcements', on_delete=models.CASCADE)
-    text = models.CharField(max_length=MAX_CHAR_LENGTH)
+    text = models.CharField(max_length=MAX_INFO_LENGTH)
     created_by = models.ForeignKey(User, related_name='created_by', on_delete=models.CASCADE)
     created_time = models.DateTimeField(auto_now_add=True)
 

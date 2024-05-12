@@ -9,7 +9,7 @@ import json
 import base64
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
-from user.views import validate_age, validate_email, validate_phone, validate_name, validate_password, validate_birthday, validate_gender_type, validate_introduction, validate_location, validate_portrait_type
+from user.views import validate_age, validate_email, validate_phone, validate_name, validate_password, validate_birthday, validate_gender_type, validate_info_length, validate_info_length, validate_portrait_type
 
 class ValidateFunctionsTestCase(TestCase):
 
@@ -44,9 +44,9 @@ class ValidateFunctionsTestCase(TestCase):
         self.assertTrue(validate_gender_type(1))
         self.assertFalse(validate_gender_type('-1'))
         self.assertFalse(validate_gender_type(3))
-    def test_validate_introduction(self):
-        self.assertTrue(validate_introduction('This is a test introduction.'))
-        self.assertFalse(validate_introduction('T'*1001))
+    def test_validate_info_length(self):
+        self.assertTrue(validate_info_length('This is a test introduction.'))
+        self.assertFalse(validate_info_length('T'*1001))
 
 # -*- coding: UTF-8 -*-
 # Create your tests here.
