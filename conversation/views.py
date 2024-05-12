@@ -604,9 +604,9 @@ def set_owner(req: HttpRequest):
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     new_owner_group_conversation = UserGroupConversation.objects.get(user=new_owner, group_conversation__id=group_id)
 
-    group_conversation = GroupConversation(id=group_id)
+    group_conversation = GroupConversation.objects.get(id=group_id)
 
-    if not user_group_conversation.identity == 2: # 群主不可转让群主
+    if user_group_conversation.identity != 2: # 非群主不可转让群主
         return PERMISSION_DENIED
     
     # 删除新群主原来的群身份
