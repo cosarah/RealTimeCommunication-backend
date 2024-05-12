@@ -415,6 +415,7 @@ def send_group_message(req: HttpRequest):
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
         group_id = require(body, "groupId", "string", err_msg="Missing or error type of [groupId]")
         message_text = require(body, "message", "string", err_msg="Missing or error type of [message]")
+        quote_id = require(body, "quote", "string", err_msg="Missing or error type of [quoteId]")
     except:
         return BAD_PARAMS
     
@@ -427,7 +428,14 @@ def send_group_message(req: HttpRequest):
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = GroupConversation.objects.get(id=group_id)
-    message = GroupMessage(sender=user,text=message_text,conversation=group_conversation)
+    
+    if quote_id != "":
+        if not GroupMessage.objects.filter(id=quote_id).exists():
+            return MESSAGE_NOT_FOUND
+        quote_message = GroupMessage.objects.get(id=quote_id)
+        message = GroupMessage(sender=user,text=message_text,conversation=group_conversation,quote=quote_message)
+    else: 
+        message = GroupMessage(sender=user,text=message_text,conversation=group_conversation)
     message.save()
     group_conversation.save() # 用于更新时间
 
