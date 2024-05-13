@@ -320,8 +320,8 @@ def create_group_conversation(req: HttpRequest):
     user_group_conversation.save()
     ## 创建成员群组会话
     for member in group_members:
-        group_conversation.add_member(User.objects.get(name=member))
-        UserGroupConversation.objects.create(user=User.objects.get(name=member), group_conversation=group_conversation, identity=0)
+        member = User.objects.get(name=member)
+        group_conversation.add_member(member)
 
     group_conversation.save()
     return request_success({'groupId': group_conversation.id})
