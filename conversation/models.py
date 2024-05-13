@@ -122,6 +122,7 @@ class GroupMessage(models.Model):
             'id': self.id,
             'senderName': self.sender.name,
             'sendTime': self.created_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'potraitType': self.sender.portrait_type,
             'text': self.text,
             'quoteId': self.quote.id if self.quote else None,
             'quotedNum': len(self.group_quotes.all()),
