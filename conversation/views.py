@@ -157,26 +157,26 @@ def send_private_message(req: HttpRequest):
     friendship2 = Friendship.objects.get(from_user=friend, to_user=user)
     
     # 私聊
-    if not PrivateConversation.objects.filter(user1=user,user2=friend).exists():
+    if PrivateConversation.objects.filter(user1=user,user2=friend).exists():
         private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
-    elif not PrivateConversation.objects.filter(user1=friend,user2=user).exists():
+    elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else: # create it
-        private_conversation = PrivateConversation(user1=user,user2=friend)
+        private_conversation = PrivateConversation.objects.create(user1=user,user2=friend)
         private_conversation.save()
     
     # 用户自己的私聊
     if UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
         user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
     else:
-        user_private_conversation = UserPrivateConversation(user=user,friendship=friendship,conversation=private_conversation)
+        user_private_conversation = UserPrivateConversation.objects.create(user=user,friendship=friendship,conversation=private_conversation)
         user_private_conversation.save()
 
     # 好友的私聊
     if UserPrivateConversation.objects.filter(user=friend,conversation=private_conversation).exists():
         friend_private_conversation = UserPrivateConversation.objects.get(user=friend,conversation=private_conversation)
     else:
-        friend_private_conversation = UserPrivateConversation(user=friend,friendship=friendship2,conversation=private_conversation)
+        friend_private_conversation = UserPrivateConversation.objects.create(user=friend,friendship=friendship2,conversation=private_conversation)
         friend_private_conversation.save()
     
     
