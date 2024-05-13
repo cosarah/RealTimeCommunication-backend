@@ -155,3 +155,56 @@ class SetGroupAnnouncementTestCase(TestCase):
         response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json')
         self.assertEqual(response.status_code, 403)  # 假设403是权限拒绝的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
+
+
+class GetGroupConversationListTestCase(TestCase):
+    def setUp(self):
+        # 创建测试用户
+        self.user1 = User.objects.create(name='john_doe', password='password')
+        self.user2 = User.objects.create(name='jane_doe', password='password')
+        
+        # 创建群组会话并添加用户1和用户2
+        self.group_conversation1 = GroupConversation.objects.create(title='TestGroup1', owner=self.user1)
+        self.user1_group_conversation1 = UserGroupConversation.objects.create(user=self.user1, group_conversation=self.group_conversation1, identity=2)
+        self.user2_group_conversation1 = UserGroupConversation.objects.create(user=self.user2, group_conversation=self.group_conversation1, identity=0)
+        
+        self.group_conversation2 = GroupConversation.objects.create(title='TestGroup2', owner=self.user1)
+        self.user1_group_conversation2 = UserGroupConversation.objects.create(user=self.user1, group_conversation=self.group_conversation2, identity=2)
+        
+        # 设置测试URL和数据
+        self.url = '/conversation/group'
+        self.data = {
+            'userName': 'john_doe'
+        }
+
+    def test_get_group_conversation_list_success(self):
+        # 测试成功获取群组会话列表
+        response = self.client.get(self.url, data=self.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(json.loads(response.content)['code'], 0)
+        self.assertEqual(json.loads(response.content)['info'], 'Succeed')
+        
+        # 确保返回了群组会话列表
+        group_conversations = json.loads(response.content)['groupConversationList']
+        self.assertEqual(len(group_conversations), 2)
+        self.assertEqual(group_conversations[0]['groupConversation']['title'], 'TestGroup1')
+        self.assertEqual(group_conversations[1]['groupConversation']['title'], 'TestGroup2')
+
+    def test_get_group_conversation_list_bad_method(self):
+        # 测试非GET请求
+        response = self.client.post(self.url, data=self.data)
+        self.assertEqual(response.status_code, 405)  # 假设405是方法不被允许的错误码
+
+    def test_get_group_conversation_list_missing_fields(self):
+        # 测试缺少字段的请求
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 404)  # 假设400是坏参数的错误码
+        self.assertIn('User not found', json.loads(response.content)['info'])
+
+    def test_get_group_conversation_list_user_not_found(self):
+        # 测试用户不存在的情况
+        data_user_not_found = self.data.copy()
+        data_user_not_found['userName'] = 'unknown_user'
+        response = self.client.get(self.url, data=data_user_not_found)
+        self.assertEqual(response.status_code, 404)  # 用户未找到的错误码
+        self.assertIn('User not found', json.loads(response.content)['info'])
