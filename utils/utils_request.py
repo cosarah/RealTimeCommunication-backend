@@ -48,3 +48,5 @@ MESSAGE_NOT_FOUND = request_failed(-10, "Message not found", 404)
 ALREADY_CLOSED = request_failed(-11, "Already closed", 403)
 PERMISSION_DENIED = request_failed(-12, "Permission denied", 403)
 REQUEST_NOT_FOUND = request_failed(-13, "Request not found", 404)
+
+SIZE_LIMIT_EXCEEDED = request_failed(-14, "Size limit exceeded", 413)

@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import Friendship
 from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation, GroupMessage, GroupConversationRequest
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED, REQUEST_NOT_FOUND
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED, REQUEST_NOT_FOUND, SIZE_LIMIT_EXCEEDED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -152,6 +152,9 @@ def send_private_message(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    if len(message_text) > MAX_CHAR_LENGTH:
+        return SIZE_LIMIT_EXCEEDED
+
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -425,6 +428,9 @@ def send_group_message(req: HttpRequest):
         quote_id = require(body, "quote", "string", err_msg="Missing or error type of [quoteId]")
     except:
         return BAD_PARAMS
+        
+    if len(message_text) > MAX_CHAR_LENGTH:
+        return SIZE_LIMIT_EXCEEDED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
@@ -788,7 +794,8 @@ def invite_group_member(req: HttpRequest):
     except:
         return BAD_PARAMS
     if not validate_info_length(message):
-        return BAD_PARAMS
+        return SIZE_LIMIT_EXCEEDED
+    
     if message == "":
         message = "Invite my friend."
 
