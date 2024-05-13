@@ -78,17 +78,23 @@ def get_private_message_list(req: HttpRequest):
     
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
+    if not Friendship.objects.filter(from_user=user,to_user=friend).exists():
+        return FRIENDSHIP_NOT_FOUND
+    friendship = Friendship.objects.get(from_user=user,to_user=friend)
+    
+
     if PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若不存在，则创建之
-        private_conversation = PrivateConversation.objects.get(user1=user,user2=friend_name)
+        private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
     elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else:
         private_conversation = PrivateConversation.objects.create(user1=user,user2=friend)    
     
     if not UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
-        user_private_conversation = UserPrivateConversation.objects.create(user=user,conversation=private_conversation)
+        user_private_conversation = UserPrivateConversation.objects.create(user=user,friendship=friendship,conversation=private_conversation)
     else:
         user_private_conversation = UserPrivateConversation.objects.get(user=user,conversation=private_conversation)
+
     user_private_conversation.read()
     return request_success(data={'messageList': private_conversation.get_messages()})
 
@@ -108,7 +114,7 @@ def get_user_private_message_list(req: HttpRequest):
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     if PrivateConversation.objects.filter(user1=user,user2=friend).exists(): # 若存在，则获得之
-        private_conversation = PrivateConversation.objects.get(user1=user,user2=friend_name)
+        private_conversation = PrivateConversation.objects.get(user1=user,user2=friend)
     elif PrivateConversation.objects.filter(user1=friend,user2=user).exists():
         private_conversation = PrivateConversation.objects.get(user1=friend,user2=user)
     else: # 若不存在，创建之
@@ -117,6 +123,7 @@ def get_user_private_message_list(req: HttpRequest):
     if not Friendship.objects.filter(from_user=user,to_user=friend).exists() or not Friendship.objects.filter(from_user=friend, to_user=user).exists():
         return FRIENDSHIP_NOT_FOUND
     friendship = Friendship.objects.get(from_user=user,to_user=friend)
+    friendship2 = Friendship.objects.get(from_user=friend,to_user=user)
 
     # 获得用户自己的私聊
     if not UserPrivateConversation.objects.filter(user=user,conversation=private_conversation).exists():
@@ -126,7 +133,7 @@ def get_user_private_message_list(req: HttpRequest):
 
     # 若好友私聊不存在
     if not UserPrivateConversation.objects.filter(user=friend,conversation=private_conversation).exists():
-        friend_private_conversation = UserPrivateConversation.objects.create(user=friend,friendship=friendship,conversation=private_conversation)
+        friend_private_conversation = UserPrivateConversation.objects.create(user=friend,friendship=friendship2,conversation=private_conversation)
     
     user_private_conversation.read()
     return request_success(data={'messageList': user_private_conversation.get_messages()})
