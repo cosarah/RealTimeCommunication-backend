@@ -954,7 +954,10 @@ def add_group_member(req: HttpRequest):
     # 若曾经在群里面且被踢出过，则先删除该用户的全部记录，再进群
     if UserGroupConversation.objects.filter(user=invitee, group_conversation__id=group_id).exists() and UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).is_kicked:
         UserGroupConversation.objects.get(user=invitee, group_conversation__id=group_id).delete()
+    
     invitee_group_conversation = UserGroupConversation.objects.create(user=invitee, group_conversation=group_conversation, alias=invitee.nick_name, identity=0)
+    group_conversation.members.add(invitee)
+
     for message in group_conversation.messages.all():
         invitee_group_conversation.messages.add(message)
     group_conversation.save()
