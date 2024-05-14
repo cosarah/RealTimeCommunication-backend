@@ -12,7 +12,7 @@ from utils.utils_jwt import generate_jwt_token, check_jwt_token
 # return_field函数根据提供的字段列表过滤出所需数据
 ### TODO:验证数据格式
 import re
-PORTRAIT_TYPE = list(range(-1,10))
+PORTRAIT_TYPE = list(range(-1,11))
 EMPTY_PORTRAIT = 0
 SELF_DEFINED_PORTRAIT = -1
 def validate_portrait_type(portrait_type):
