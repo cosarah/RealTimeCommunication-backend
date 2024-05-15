@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'user',
     'friend',
     'conversation',
+    'daphne',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -88,6 +89,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'DjangoHW.wsgi.application'
 
+ASGI_APPLICATION = 'DjangoHW.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -142,3 +144,11 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
+
+CORS_ALLOW_ALL_ORIGINS = True
