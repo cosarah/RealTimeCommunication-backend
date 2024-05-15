@@ -38,8 +38,8 @@ class ValidateFunctionsTestCase(TestCase):
         self.assertFalse(validate_password('p'*100))
     def test_validate_birthday(self):
         self.assertTrue(validate_birthday('1990-01-01'))
-        self.assertFalse(validate_birthday('199-13-01'))
-        self.assertFalse(validate_birthday('1990-1-32'))
+        self.assertFalse(validate_birthday('1990-13-01'))
+        self.assertFalse(validate_birthday('1990-01-32'))
     def test_validate_gender_type(self):
         self.assertTrue(validate_gender_type(1))
         self.assertFalse(validate_gender_type('-1'))
@@ -196,7 +196,6 @@ class InfoTests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
-        self.assertEqual(res.json()["token"], generate_jwt_token("Ashitemaru"))
         
         res = self.client.post('/user/fix', data=data, content_type='application/json')
         self.assertEqual(res.status_code, 200)

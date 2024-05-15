@@ -7,6 +7,7 @@ from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, ALREADY_CLOSED
 from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
+from datetime import datetime
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 
 # return_field函数根据提供的字段列表过滤出所需数据
@@ -43,7 +44,20 @@ def validate_email(email):
 
 def validate_birthday(birthday):
     # 期望的出生日期格式为YYYY-MM-DD
-    return re.match(r'^\d{4}-\d{2}-\d{2}$', birthday)
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', birthday):
+        return False
+    
+    try:
+        # 尝试将字符串转换为日期对象，这也会检查月份和日期的有效性
+        date_obj = datetime.strptime(birthday, '%Y-%m-%d')
+    except ValueError:
+        # 如果转换失败，则说明日期无效
+        return False
+    
+    if datetime.strptime(birthday, "%Y-%m-%d") > datetime.now():
+        return False
+    
+    return True
 
 def validate_age(age):
     # 年龄应该是一个正整数
@@ -99,8 +113,8 @@ def register(req: HttpRequest):
     else:
         user = User(name=user_name, password=password, nick_name=user_name)
         user.save()
-        return request_success({"token": generate_jwt_token(user_name)})
-# 重定位到聊天列表页
+        return request_success() # 注册成功并不返回token，因为token需要登录后才能获取
+
 
 # 获取用户个人信息
 @CheckRequire
@@ -120,7 +134,10 @@ def get_user_info(req: HttpRequest):
     
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
-    # 返回用户信息
+    
+    # 返回用户信息与令牌
+    return_data = user.__all_info__()
+    return_data["token"] = generate_jwt_token(user_name)
     return request_success(user.__all_info__())
 
 # 修改用户个人信息
@@ -151,19 +168,14 @@ def fix_user_info(req: HttpRequest):
         phone = require(body, "phone", "string", err_msg="Missing or error type of [phone]")
         email = require(body, "email", "string", err_msg="Missing or error type of [email]")
         gender_info = require(body, "gender", "string", err_msg="Missing or error type of [gender]") # gender为枚举类型
-        if gender_info == "male":
-            gender = 1
-        elif gender_info == "female":
-            gender = 2
-        else:
-            gender = 0
+        
         portrait = require(body, "portrait", "string", err_msg="Missing or error type of [portrait]")
         introduction = require(body, "introduction", "string", err_msg="Missing or error type of [introduction]")
         birthday = require(body, "birthday", "string", err_msg="Missing or error type of [birthday]")
         age = require(body, "age", "int", err_msg="Missing or error type of [age]")
         location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     except:
-        return request_failed(0, "Missing or error type of [userName]", 400)
+        return BAD_PARAMS
     
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
@@ -177,18 +189,27 @@ def fix_user_info(req: HttpRequest):
         if validate_nick_name(nick_name): # 若有输入，则改变昵称
             user.nick_name = nick_name
         else:
-            return BAD_PARAMS
+            return request_failed(1, "Invalid nickname")
     if phone: 
         if validate_phone(phone): # 若有输入，则改变手机号
             user.phone = phone
         else:
-            return BAD_PARAMS
+            return request_failed(2, "Invalid phone number")
             
     if email:
         if validate_email(email): # 若有输入，则改变邮箱
             user.email = email
         else:
-            return BAD_PARAMS
+            return request_failed(3, "Invalid email address")
+    
+    if gender_info == "male":
+        gender = 1
+    elif gender_info == "female":
+        gender = 2
+    elif gender_info == "":
+        gender = ""
+    else:
+        gender = 0
     if gender:
         user.gender = gender
 
@@ -196,23 +217,23 @@ def fix_user_info(req: HttpRequest):
         if validate_info_length(introduction): # 若有输入，则改变简介
             user.introduction = introduction
         else:
-            return BAD_PARAMS
+            return request_failed(4, "Invalid introduction")
 
     if birthday:
         if validate_birthday(birthday): # 若有输入，则改变生日
             user.birthday = birthday
         else:
-            return BAD_PARAMS
+            return request_failed(5, "Invalid birthday")
     if age:
         if validate_age(age): # 若有输入，则改变年龄
             user.age = age
         else:    
-            return BAD_PARAMS
+            return request_failed(6, "Invalid age")
     if location:
         if validate_info_length(location): # 若有输入，则改变位置
             user.location = location
         else:
-            return BAD_PARAMS
+            return request_failed(7, "Invalid location")
     user.save()
     return request_success({"token": generate_jwt_token(user_name)})
 
@@ -227,6 +248,8 @@ def fix_password(req: HttpRequest):
     except:
         return request_failed(0, "Missing or error type of [userName]", 400)
 
+    if not validate_password(new_password):
+        return request_failed(1, "Invalid password", 400)
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -286,7 +309,7 @@ def close(request: HttpRequest):
     return request_success(info="User closed")
 # 重定位到登录页
 
-
+@CheckRequire
 def logout(req: HttpRequest):
     if req.method != 'POST':
         return BAD_METHOD
