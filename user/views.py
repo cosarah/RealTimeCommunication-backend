@@ -9,6 +9,7 @@ from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAM
 from utils.utils_time import get_timestamp
 from datetime import datetime
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
+import bcrypt
 
 # return_field函数根据提供的字段列表过滤出所需数据
 ### TODO:验证数据格式
@@ -85,7 +86,7 @@ def login(req: HttpRequest):
         return USER_NOT_FOUND
 
     user = User.objects.get(name=user_name) # 获取用户名对应的用户实例
-    if user.password == password: # 判断密码是否正确
+    if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')): # 核验密码正确性
         user.login()
         return request_success({"token": generate_jwt_token(user_name)})
     else:
@@ -111,7 +112,12 @@ def register(req: HttpRequest):
     if User.objects.filter(name=user_name).exists():
         return ALREADY_EXIST
     else:
-        user = User(name=user_name, password=password, nick_name=user_name)
+        # 密码加密
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        hashed_password = hashed.decode('utf-8')
+
+        user = User(name=user_name, password=hashed_password, nick_name=user_name)
         user.save()
         return request_success() # 注册成功并不返回token，因为token需要登录后才能获取
 
@@ -138,7 +144,7 @@ def get_user_info(req: HttpRequest):
     # 返回用户信息与令牌
     return_data = user.__all_info__()
     return_data["token"] = generate_jwt_token(user_name)
-    return request_success(user.__all_info__())
+    return request_success(return_data)
 
 # 修改用户个人信息
 ### TODO:修改用户密码
@@ -256,8 +262,12 @@ def fix_password(req: HttpRequest):
     user = User.objects.get(name=user_name)
     if user.is_closed == True:
         return ALREADY_CLOSED
-    if user.password == old_password:
-        user.password = new_password
+    if bcrypt.checkpw(old_password.encode('utf-8'), user.password.encode('utf-8')):
+        # 修改密码
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(new_password.encode('utf-8'), salt)
+        hashed_password = hashed.decode('utf-8')
+        user.password = hashed_password
         user.save()
         return request_success({"token": generate_jwt_token(user_name)})
     else:

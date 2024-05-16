@@ -1,8 +1,6 @@
 from django.utils import timezone
 from django.db import models
-
-from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
-
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH,  MAX_INFO_LENGTH
 # 可采用Django REST framework 的序列化器避免手写序列化代码
 # 一般外键链接主键
 # related_name 反向查询时使用的别名
@@ -28,7 +26,7 @@ from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_L
 class User(models.Model):
     # 隐私信息，可用于认证
     name = models.CharField(max_length=MAX_NAME_LENGTH, primary_key=True) # 用户名，作为主键
-    password = models.CharField(max_length=MAX_PASSWORD_LENGTH) # 密码 TODO: 加密
+    password = models.CharField(max_length=MAX_CHAR_LENGTH) # 密码 TODO: 加密
     phone = models.CharField(max_length=11, null=True, verbose_name='手机号码', db_index=True, unique=True) # 手机号码，可为空
     email = models.EmailField(max_length=25, null=True, verbose_name='邮箱', db_index=True, unique=True) # 邮箱
 
@@ -77,7 +75,6 @@ class User(models.Model):
             "logoutTime":self.logout_time.strftime('%Y-%m-%d %H:%M:%S') if self.logout_time else None,
             "phone": self.phone,
             "email": self.email,
-            "password": self.password,
             "isClosed": self.is_closed
         }
 
