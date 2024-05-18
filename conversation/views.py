@@ -673,14 +673,14 @@ def withdraw_group_message(req: HttpRequest):
     
     user_group_conversation = UserGroupConversation.objects.get(user=user, group_conversation__id=group_id)
     group_conversation = user_group_conversation.group_conversation
-    if not PrivateMessage.objects.filter(id=message_id).exists():
+    if not GroupMessage.objects.filter(id=message_id).exists():
         return MESSAGE_NOT_FOUND
-    private_message = PrivateMessage.objects.get(id=message_id)
+    group_message = GroupMessage.objects.get(id=message_id)
 
-    if private_message.conversation != group_conversation:
+    if group_message.conversation != group_conversation:
         return request_failed(1, "Not message sender", 403)
     
-    private_message.delete()
+    group_message.delete()
     return request_success()
 
 ###############
