@@ -3,7 +3,7 @@ from user.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 
-from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
+from utils.utils_require import MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_INFO_LENGTH
 
 
 # Create your models here.
