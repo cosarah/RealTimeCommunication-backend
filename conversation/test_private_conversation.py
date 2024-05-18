@@ -15,6 +15,7 @@ class PrivateConversationCreateTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
 
     def test_create_private_conversation(self):
@@ -72,17 +73,18 @@ class PrivateConversationSendMessageTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
 
     def test_send_message(self):
-        response = self.client.post(self.url, data=self.data, content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
         self.assertEqual(json.loads(response.content)['messageId'], 1)
 
     def check_message(self):
-        response = self.client.post(self.url, data=self.data, content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')

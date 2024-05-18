@@ -22,8 +22,9 @@ class TestGetFriendList(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
     def test_get_friend_list(self):
-        response = self.client.get('/friend/', {'userName': self.user1.name}, headers=self.headers)
+        response = self.client.get('/friend/', {'userName': self.user1.name}, HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertEqual(len(data['friends']), 2)
@@ -36,7 +37,7 @@ class TestGetFriendList(TestCase):
         
         self.friendship1.tags.set([self.tag1,self.tag2])
         self.friendship2.tags.set([self.tag1])
-        response = self.client.get('/friend/tags/', {'userName': self.user1.name}, headers=self.headers)
+        response = self.client.get('/friend/tags/', {'userName': self.user1.name}, HTTP_AUTHORIZATION=self.token)
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)

@@ -24,10 +24,11 @@ class AddGroupMemberTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_add_group_member_success(self):
         self.assertFalse(UserGroupConversation.objects.filter(user=self.user3, group_conversation=self.group_conversation).exists())
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -52,10 +53,11 @@ class RemoveGroupMemberTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_remove_group_member_success(self):
         self.assertTrue(UserGroupConversation.objects.filter(user=self.user2, group_conversation=self.group_conversation).exists())
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')

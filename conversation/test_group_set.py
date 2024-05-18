@@ -28,10 +28,11 @@ class SetGroupOwnerTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_set_owner_success(self):
         # 测试成功转移群主
-        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -41,14 +42,14 @@ class SetGroupOwnerTestCase(TestCase):
 
     def test_set_owner_bad_method(self):
         # 测试非POST请求
-        response = self.client.get(self.url, data=self.data, headers=self.headers)
+        response = self.client.get(self.url, data=self.data, HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 405)  # 假设405是方法不被允许的错误码
 
     def test_set_owner_missing_fields(self):
         # 测试缺少字段的请求
         data_missing = self.data.copy()
         data_missing.pop('newOwnerName')
-        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 400)  # 假设400是坏参数的错误码
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -56,7 +57,7 @@ class SetGroupOwnerTestCase(TestCase):
         # 测试群组不存在的情况
         data_wrong_group = self.data.copy()
         data_wrong_group['groupId'] = '999'  # 假设这是一个不存在的群组ID
-        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 404)  # 假设404是资源未找到的错误码
         self.assertIn('Conversation not found', json.loads(response.content)['info'])
 
@@ -64,7 +65,7 @@ class SetGroupOwnerTestCase(TestCase):
         # 测试用户不存在的情况
         data_user_not_found = self.data.copy()
         data_user_not_found['userName'] = 'unknown_user'
-        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 用户未找到的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
 
@@ -72,7 +73,7 @@ class SetGroupOwnerTestCase(TestCase):
         # 测试非群主尝试转移群主
         data_permission_denied = self.data.copy()
         data_permission_denied['userName'] = 'jane_doe'  # 非群主用户
-        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 假设403是权限拒绝的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
 
@@ -107,10 +108,11 @@ class AddGroupAdminTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_add_admin_success(self):
         # 测试成功添加管理员
-        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -120,14 +122,14 @@ class AddGroupAdminTestCase(TestCase):
 
     def test_add_admin_bad_method(self):
         # 测试非POST请求
-        response = self.client.get(self.url, data=self.data, headers=self.headers)
+        response = self.client.get(self.url, data=self.data, HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 405)  # 假设405是方法不被允许的错误码
 
     def test_add_admin_missing_fields(self):
         # 测试缺少字段的请求
         data_missing = self.data.copy()
         data_missing.pop('newAdminNameList')
-        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 400)  # 假设400是坏参数的错误码
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -135,7 +137,7 @@ class AddGroupAdminTestCase(TestCase):
         # 测试群组不存在的情况
         data_wrong_group = self.data.copy()
         data_wrong_group['groupId'] = '999'  # 假设这是一个不存在的群组ID
-        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 404)  # 假设404是资源未找到的错误码
         self.assertIn('Conversation not found', json.loads(response.content)['info'])
 
@@ -143,7 +145,7 @@ class AddGroupAdminTestCase(TestCase):
         # 测试用户不存在的情况
         data_user_not_found = self.data.copy()
         data_user_not_found['userName'] = 'unknown_user'
-        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 用户未找到的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
 
@@ -151,7 +153,7 @@ class AddGroupAdminTestCase(TestCase):
         # 测试非群主尝试添加管理员
         data_permission_denied = self.data.copy()
         data_permission_denied['userName'] = 'jane_doe'  # 非群主用户
-        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 假设403是权限拒绝的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
 
@@ -180,10 +182,11 @@ class DeleteGroupAdminTestCase(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_delete_admin_success(self):
         # 测试成功删除管理员
-        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(self.data), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -193,14 +196,14 @@ class DeleteGroupAdminTestCase(TestCase):
 
     def test_delete_admin_bad_method(self):
         # 测试非POST请求
-        response = self.client.get(self.url, data=self.data, headers=self.headers)
+        response = self.client.get(self.url, data=self.data, HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 405)  # 假设405是方法不被允许的错误码
 
     def test_delete_admin_missing_fields(self):
         # 测试缺少字段的请求
         data_missing = self.data.copy()
         data_missing.pop('adminNameList')
-        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_missing), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 400)  # 假设400是坏参数的错误码
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -208,7 +211,7 @@ class DeleteGroupAdminTestCase(TestCase):
         # 测试群组不存在的情况
         data_wrong_group = self.data.copy()
         data_wrong_group['groupId'] = '999'  # 假设这是一个不存在的群组ID
-        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_wrong_group), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 404)  # 假设404是资源未找到的错误码
         self.assertIn('Conversation not found', json.loads(response.content)['info'])
 
@@ -216,7 +219,7 @@ class DeleteGroupAdminTestCase(TestCase):
         # 测试用户不存在的情况
         data_user_not_found = self.data.copy()
         data_user_not_found['userName'] = 'unknown_user'
-        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_user_not_found), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 用户未找到的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])
 
@@ -224,6 +227,6 @@ class DeleteGroupAdminTestCase(TestCase):
         # 测试非群主尝试删除管理员
         data_permission_denied = self.data.copy()
         data_permission_denied['userName'] = 'jane_doe'  # 非群主用户
-        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', headers=self.headers)
+        response = self.client.post(self.url, data=json.dumps(data_permission_denied), content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)  # 假设403是权限拒绝的错误码
         self.assertIn('Permission denied', json.loads(response.content)['info'])

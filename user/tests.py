@@ -187,7 +187,7 @@ class InfoTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertTrue(res.json()['token'], generate_jwt_token("Ashitemaru"))
 
-        res = self.client.get('/user', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.get('/user', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
@@ -206,13 +206,13 @@ class InfoTests(TestCase):
             "age": 34,
             "location": "New York"
         }
-        res = self.client.post('/user/fix', data=new_data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user/fix', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
 
 
-        res = self.client.get('/user', data={"userName": "Ashitemaru"}, content_type='application/json', headers=self.headers)
+        res = self.client.get('/user', data={"userName": "Ashitemaru"}, content_type='application/json', HTTP_AUTHORIZATION=self.token)
  
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.status_code, 200)
@@ -234,7 +234,7 @@ class InfoTests(TestCase):
 
         data = {"userName": "Ashitemaru", "nickName": "Ashitemaru", "phone": "12345678901", "email": "ashitemaru@gmail.com", "gender": "male", "portrait": "https://example.com/portrait.jpg", "introduction": "Ashitemaru is a cool guy", "birthday": "1990-01-01", "age": "34", "location": "Beijing"}
         res = self.client.post('/register', data=data, content_type='application/json')
-        res = self.client.put('/user/fix', data=data, content_type='application/json', headers=self.headers)
+        res = self.client.put('/user/fix', data=data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
@@ -248,25 +248,26 @@ class CloseTests(TestCase):
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
         }
+        self.token = generate_jwt_token("Ashitemaru")
 
     # ! Test section
     # * Tests for close view
     def test_close_account(self):
 
-        res = self.client.post('/user/close', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user/close', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['info'], 'User closed')
 
     def test_close_account_with_bad_method(self):
 
-        res = self.client.put('/user/close', data=self.data, content_type='application/json' , **self.headers)
+        res = self.client.put('/user/close', data=self.data, content_type='application/json' , HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
     
     def test_close_not_exist_user(self):
         new_data = {"userName": "NewUser", "password": "123456"}
-        res = self.client.post('/user/close', data=new_data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user/close', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json()['code'], -12)
         self.assertEqual(res.json()['info'], 'Permission denied')
@@ -281,6 +282,7 @@ class LogoutTests(TestCase):
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
         }
+        self.token = generate_jwt_token("Ashitemaru")
 
     def test_logout(self):
         """测试用户登出"""
@@ -289,14 +291,14 @@ class LogoutTests(TestCase):
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertTrue(res.json()['token'].count('.') == 2)
-        res = self.client.post('/logout', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/logout', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['info'], 'Logout succeed')
 
     def test_logout_with_bad_method(self):
         """测试用户登出时使用错误的 HTTP 方法"""
 
-        res = self.client.get('/logout', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.get('/logout', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
 
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
@@ -306,7 +308,7 @@ class LogoutTests(TestCase):
         """测试不存在的用户登出"""
 
         new_data = {"userName": "NewUser", "password": "123456"}
-        res = self.client.post('/logout', data=new_data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/logout', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json()['code'], -12)
         self.assertEqual(res.json()['info'], 'Permission denied')
@@ -314,7 +316,7 @@ class LogoutTests(TestCase):
     def test_logout_without_login(self):
         """测试未登录用户登出"""
 
-        res = self.client.post('/logout', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/logout', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json()['code'], 1)
         self.assertEqual(res.json()['info'], 'User not logged in')
@@ -327,10 +329,11 @@ class FixUserPasswordTests(TestCase):
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
         }
+        self.token = generate_jwt_token("Ashitemaru")
 
     def test_fix_user_password(self):
         """测试修改用户密码"""
-        res = self.client.post('/user/fix/password', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user/fix/password', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['info'], 'Succeed')
 
@@ -340,7 +343,7 @@ class FixUserPasswordTests(TestCase):
     def test_fix_user_password_with_bad_method(self):
         """测试修改用户密码时使用错误的 HTTP 方法"""
 
-        res = self.client.get('/user/fix/password', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.get('/user/fix/password', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
 
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
@@ -351,7 +354,7 @@ class FixUserPasswordTests(TestCase):
 
         new_data = self.data.copy()
         new_data["userName"] = "NewUser"
-        res = self.client.post('/user/fix/password', data=new_data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user/fix/password', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json()['code'], -12)
         self.assertEqual(res.json()['info'], 'Permission denied')

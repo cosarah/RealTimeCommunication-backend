@@ -16,9 +16,10 @@ class FriendDeleteTest(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_delete_friend(self):
-        response = self.client.post('/friend/delete/',data=self.data, content_type='application/json', headers=self.headers)
+        response = self.client.post('/friend/delete/',data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Friendship.objects.filter(from_user=self.user1, to_user=self.user2).count(), 0)
         self.assertEqual(Friendship.objects.filter(from_user=self.user2, to_user=self.user1).count(), 0)
@@ -37,10 +38,11 @@ class UserSearchTest(TestCase):
             "Authorization": generate_jwt_token(self.user1.name),
             "Content-Type": "application/json"
         }
+        self.token=generate_jwt_token(self.user1.name)
 
     def test_search_user(self):
-        response1 = self.client.get('/friend/search/',data=self.data1, content_type='application/json', headers=self.headers)
-        response2 = self.client.get('/friend/search/',data=self.data2, content_type='application/json', headers=self.headers)
+        response1 = self.client.get('/friend/search/',data=self.data1, content_type='application/json', HTTP_AUTHORIZATION=self.token)
+        response2 = self.client.get('/friend/search/',data=self.data2, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response1.status_code, 200)
         self.assertEqual(response2.status_code, 200)
         self.assertEqual(json.loads(response1.content)['isFriend'], 1)
@@ -48,7 +50,7 @@ class UserSearchTest(TestCase):
 
     def test_search_user_not_exist(self):
         data = {'userName':self.user1.name, 'keyword': 'test4', 'info':'name'}
-        response = self.client.get('/friend/search/',data=data, content_type='application/json', headers=self.headers)
+        response = self.client.get('/friend/search/',data=data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(json.loads(response.content)['info'], 'User not found')
         self.assertEqual(json.loads(response.content)['code'], -5)
@@ -56,7 +58,7 @@ class UserSearchTest(TestCase):
     def test_search_user_unknown_info(self):
         data = {'userName':self.user1.name, 'keyword': 'test2', 'info':'phoneing'}
 
-        response = self.client.get('/friend/search/',data=data, content_type='application/json', headers=self.headers)
+        response = self.client.get('/friend/search/',data=data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 403)
 
         self.assertEqual(json.loads(response.content)['info'], 'Unknown info type')
