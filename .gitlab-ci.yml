@@ -36,6 +36,7 @@ unit-test:
   stage: test
   before_script:
     - pip install -r requirements.txt
+    - pip install bcrypt
   script:
     - mkdir db
     - python manage.py makemigrations user friend conversation

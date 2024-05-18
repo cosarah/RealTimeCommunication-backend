@@ -10,8 +10,8 @@ uwsgi  # Please uncomment this line when you try to deploy the project onto SECo
 # pymysql
 # mysqlclient==2.1.0
 
+bcrypt
 pytest
 pytest-django
 coverage
 datetime
-bcrypt
