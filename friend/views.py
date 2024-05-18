@@ -68,8 +68,8 @@ def get_friend_request_list(req: HttpRequest):
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
-    friend_requests = FriendRequest.objects.filter(to_user=user)
-    friend_applys = FriendRequest.objects.filter(from_user=user)
+    friend_requests = FriendRequest.objects.filter(to_user=user).order_by("-updated_time")
+    friend_applys = FriendRequest.objects.filter(from_user=user).order_by("-updated_time")
     requests_list = [friend_request.from_user_profile() for friend_request in friend_requests]
     applys_list = [friend_apply.to_user_profile() for friend_apply in friend_applys]
     return_data = {
