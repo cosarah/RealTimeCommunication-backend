@@ -3,7 +3,6 @@ from user.models import User
 from friend.models import Friendship, FriendRequest, FriendRequestMessage, UserTag
 from django.utils import timezone
 
-
 class FriendRequestTestCase(TestCase):
     def setUp(self):
         # Create two users

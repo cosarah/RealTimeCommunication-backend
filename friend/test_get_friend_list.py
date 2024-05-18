@@ -3,7 +3,7 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship, FriendRequest, UserTag
 from django.utils import timezone
-
+from utils.utils_jwt import generate_jwt_token
 class TestGetFriendList(TestCase):
     def setUp(self):
         self.user1 = User.objects.create(name='test1', password='123456')
@@ -18,8 +18,12 @@ class TestGetFriendList(TestCase):
         Friendship.objects.create(from_user=self.user3, to_user=self.user2)
         self.tag1 = UserTag.objects.create(user=self.user1, name='tag1')
         self.tag2 = UserTag.objects.create(user=self.user1, name='tag2')
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
     def test_get_friend_list(self):
-        response = self.client.get('/friend/', {'userName': self.user1.name})
+        response = self.client.get('/friend/', {'userName': self.user1.name}, headers=self.headers)
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertEqual(len(data['friends']), 2)
@@ -32,7 +36,7 @@ class TestGetFriendList(TestCase):
         
         self.friendship1.tags.set([self.tag1,self.tag2])
         self.friendship2.tags.set([self.tag1])
-        response = self.client.get('/friend/tags/', {'userName': self.user1.name})
+        response = self.client.get('/friend/tags/', {'userName': self.user1.name}, headers=self.headers)
 
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)

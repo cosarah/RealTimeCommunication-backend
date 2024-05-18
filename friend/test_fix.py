@@ -2,7 +2,7 @@ import json
 from django.test import TestCase
 from user.models import User
 from friend.models import Friendship, FriendRequest, UserTag
-from django.utils import timezone
+from utils.utils_jwt import generate_jwt_token
 
 class FriendProfileFixTestCase(TestCase):
     def setUp(self):
@@ -21,12 +21,16 @@ class FriendProfileFixTestCase(TestCase):
             "description": "Best friend from college",
             "tag": "CollegeBuddy"
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
     def test_fix_friend_profile_success_new_tag(self):
         # 测试新增标签的情况
         data = self.correct_data.copy()
         data['tag'] = 'NewTag'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
@@ -41,7 +45,7 @@ class FriendProfileFixTestCase(TestCase):
 
     def test_fix_friend_profile_success_delete_tag(self):
         # 测试删除标签的情况
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -64,7 +68,7 @@ class FriendProfileFixTestCase(TestCase):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['alias']  # 删除一个必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -72,7 +76,7 @@ class FriendProfileFixTestCase(TestCase):
         # 测试找不到朋友的情况
         data = self.correct_data.copy()
         data['friendName'] = 'unknown_person'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('User not found', json.loads(response.content)['info'])
 
@@ -91,9 +95,13 @@ class FriendProfileFixAliasTestCase(TestCase):
             "friendName": "jane_doe",
             "alias": "Jane"
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
     def test_fix_friend_profile_success(self):
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -112,7 +120,7 @@ class FriendProfileFixAliasTestCase(TestCase):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['alias']  # 删除一个必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -120,7 +128,7 @@ class FriendProfileFixAliasTestCase(TestCase):
         # 测试找不到朋友的情况
         data = self.correct_data.copy()
         data['friendName'] = 'unknown_person'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('User not found', json.loads(response.content)['info'])
 
@@ -139,9 +147,13 @@ class FriendProfileFixDescriptionTestCase(TestCase):
             "friendName": "jane_doe",
             "description": "Best friend from college"
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
     def test_fix_friend_profile_success(self):
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -153,14 +165,14 @@ class FriendProfileFixDescriptionTestCase(TestCase):
 
     def test_fix_friend_profile_bad_method(self):
         # 测试非POST请求
-        response = self.client.get(self.url)
+        response = self.client.get(self.url, headers=self.headers)
         self.assertEqual(response.status_code, 405)
 
     def test_fix_friend_profile_missing_fields(self):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['description']  # 删除一个必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -168,7 +180,7 @@ class FriendProfileFixDescriptionTestCase(TestCase):
         # 测试找不到朋友的情况
         data = self.correct_data.copy()
         data['friendName'] = 'unknown_person'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('User not found', json.loads(response.content)['info'])
 
@@ -187,9 +199,13 @@ class FriendProfileFixTagAddTestCase(TestCase):
             "friendName": "jane_doe",
             "tag": "classmate"
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
     def test_add_friend_tag_success(self):
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(UserTag.objects.filter(user=self.user1, name='CollegeBuddy').count(), 1)
@@ -205,7 +221,7 @@ class FriendProfileFixTagAddTestCase(TestCase):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['tag']  # 删除一个必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -213,7 +229,7 @@ class FriendProfileFixTagAddTestCase(TestCase):
         # 测试找不到朋友的情况
         data = self.correct_data.copy()
         data['friendName'] = 'unknown_person'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('User not found', json.loads(response.content)['info'])
 
@@ -221,7 +237,7 @@ class FriendProfileFixTagAddTestCase(TestCase):
         # 测试新增重复标签的情况
         data = self.correct_data.copy()
         data['tag'] = 'CollegeBuddy'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content)['code'], 2)
@@ -235,17 +251,17 @@ class FriendProfileFixTagAddTestCase(TestCase):
         # 测试删除标签后再添加的情况
         data = self.correct_data.copy()
         data['tag'] = 'classmate'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
-        response = self.client.post('/friend/fix/tag/delete/', data=json.dumps(data), content_type='application/json')
+        response = self.client.post('/friend/fix/tag/delete/', data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         
         self.assertEqual(UserTag.objects.filter(user=self.user1, name='classmate').count(), 1)
         self.assertEqual([tag.name for tag in Friendship.objects.get(from_user=self.user1, to_user=self.user2).tags.all()], ['CollegeBuddy'])
         self.assertNotIn('classmate', [tag.name for tag in Friendship.objects.get(from_user=self.user1, to_user=self.user2).tags.all()])
 
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
 
@@ -254,7 +270,7 @@ class FriendProfileFixTagAddTestCase(TestCase):
         # 测试新增空标签的情况
         data = self.correct_data.copy()
         data['tag'] = ''
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content)['code'], 3)
@@ -278,9 +294,13 @@ class FriendProfileFixTagDeleteTestCase(TestCase):
             "friendName": "jane_doe",
             "tag": "CollegeBuddy"
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
     def test_delete_friend_tag_success(self):
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(UserTag.objects.filter(user=self.user1, name='CollegeBuddy').count(), 1)
@@ -297,7 +317,7 @@ class FriendProfileFixTagDeleteTestCase(TestCase):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['tag']  # 删除一个必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -305,7 +325,7 @@ class FriendProfileFixTagDeleteTestCase(TestCase):
         # 测试找不到朋友的情况
         data = self.correct_data.copy()
         data['friendName'] = 'unknown_person'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('User not found', json.loads(response.content)['info'])
 
@@ -313,7 +333,7 @@ class FriendProfileFixTagDeleteTestCase(TestCase):
         # 测试找不到标签的情况
         data = self.correct_data.copy()
         data['tag'] = 'unknown_tag'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content)['code'], 2)
@@ -326,7 +346,7 @@ class FriendProfileFixTagDeleteTestCase(TestCase):
         # 测试删除不属于自己的标签的情况
         data = self.correct_data.copy()
         data['tag'] = ''
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content)['code'], 3)

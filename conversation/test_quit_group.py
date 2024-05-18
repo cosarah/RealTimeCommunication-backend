@@ -2,6 +2,7 @@ import json
 from django.test import TestCase
 from user.models import User
 from conversation.models import GroupConversation, UserGroupConversation
+from utils.utils_jwt import generate_jwt_token
 
 class QuitGroupTestCase(TestCase):
     def setUp(self):
@@ -18,11 +19,15 @@ class QuitGroupTestCase(TestCase):
             "userName": "jane_doe",
             "groupId": str(self.group_conversation.id)
         }
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user2.name),
+            "Content-Type": "application/json"
+        }
 
     def test_quit_group_success(self):
         # 测试成功退出群组
         self.assertTrue(UserGroupConversation.objects.filter(user=self.user2, group_conversation=self.group_conversation).exists())
-        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(self.correct_data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
@@ -37,7 +42,7 @@ class QuitGroupTestCase(TestCase):
         # 测试缺少字段的请求
         data = self.correct_data.copy()
         del data['groupId']  # 删除必需字段
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 400)
         self.assertIn('Bad parameters', json.loads(response.content)['info'])
 
@@ -45,7 +50,7 @@ class QuitGroupTestCase(TestCase):
         # 测试找不到群组的情况
         data = self.correct_data.copy()
         data['groupId'] = -1
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 404)
         self.assertIn('Conversation not found', json.loads(response.content)['info'])
 
@@ -53,9 +58,9 @@ class QuitGroupTestCase(TestCase):
         # 测试找不到用户的情况
         data = self.correct_data.copy()
         data['userName'] = 'unknown_user'
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
-        self.assertEqual(response.status_code, 404)
-        self.assertIn('User not found', json.loads(response.content)['info'])
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('Permission denied', json.loads(response.content)['info'])
 
     def test_quit_group_permission_denied(self):
         # 测试群主尝试退出群组的情况（通常群主不能直接退出）
@@ -63,7 +68,7 @@ class QuitGroupTestCase(TestCase):
             "userName": "john_doe",
             "groupId": str(self.group_conversation.id)
         }
-        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json')
+        response = self.client.post(self.url, data=json.dumps(data), content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 403)
         self.assertEqual(json.loads(response.content)['code'], -12)
         self.assertEqual(json.loads(response.content)['info'], 'Permission denied')

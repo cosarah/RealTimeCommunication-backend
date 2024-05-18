@@ -3,7 +3,7 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship
 from conversation.models import PrivateConversation, PrivateMessage, UserPrivateConversation
-from django.utils import timezone
+from utils.utils_jwt import generate_jwt_token
 
 class PrivateConversationCreateTestCase(TestCase):
     def setUp(self):
@@ -11,6 +11,10 @@ class PrivateConversationCreateTestCase(TestCase):
         self.user2 = User.objects.create(name='user2', password='password')
         self.friendship1 = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.friendship2 = Friendship.objects.create(from_user=self.user2, to_user=self.user1)
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
 
     def test_create_private_conversation(self):
@@ -64,17 +68,21 @@ class PrivateConversationSendMessageTestCase(TestCase):
             user1=self.user1,
             user2=self.user2
         )
+        self.headers = {
+            "Authorization": generate_jwt_token(self.user1.name),
+            "Content-Type": "application/json"
+        }
 
 
     def test_send_message(self):
-        response = self.client.post(self.url, data=self.data, content_type='application/json')
+        response = self.client.post(self.url, data=self.data, content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
         self.assertEqual(json.loads(response.content)['messageId'], 1)
 
     def check_message(self):
-        response = self.client.post(self.url, data=self.data, content_type='application/json')
+        response = self.client.post(self.url, data=self.data, content_type='application/json', headers=self.headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(json.loads(response.content)['code'], 0)
         self.assertEqual(json.loads(response.content)['info'], 'Succeed')
