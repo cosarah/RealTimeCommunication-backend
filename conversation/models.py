@@ -109,6 +109,16 @@ class UserPrivateConversation(models.Model):
     def get_unread_messages(self): # 获取未读消息
         return self.messages.order_by('-created_time')[:self.unread_messages_count]
     def delta_serialize(self):
+        unread_messages = [{
+            'id': unread_message.id,
+            'senderName': unread_message.sender.name,
+            'sendTime': unread_message.created_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'text': unread_message.text,
+            'isRead': unread_message.is_read,
+            'quoteId': unread_message.quote.id if unread_message.quote else None,
+            'quotedNum': len(unread_message.private_quotes.all()),
+            'quotedMessages': [quote.id for quote in unread_message.private_quotes.all()],
+        } for unread_message in self.get_unread_messages()] if self.get_unread_messages() else None
         return {
             'id': self.id,
             'userName': self.user.name,
@@ -119,7 +129,7 @@ class UserPrivateConversation(models.Model):
             'friendPortraitUrl': self.friendship.to_user.portrait,
             'friendIsOnline': self.friendship.to_user.is_online,
             'unreadMessageCount': self.unread_messages_count,
-            'unreadMessage': self.get_unread_messages().serialize() if self.get_unread_messages() else None,
+            'unreadMessage': unread_messages,
         }
 
 class GroupMessage(models.Model):
@@ -368,6 +378,17 @@ class UserGroupConversation(models.Model):
     def get_unread_messages(self): # 获取未读消息
         return self.messages.order_by('-created_time')[:self.unread_messages_count]
     def delta_serialize(self):
+        unread_messages = [{
+            'id': unread_message.id,
+            'senderName': unread_message.sender.name,
+            'sendTime': unread_message.created_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'text': unread_message.text,
+            'readNum': len(unread_message.read_user_list.all()),
+            'readUserList': [user.name for user in unread_message.read_user_list.all()],
+            'quoteId': unread_message.quote.id if unread_message.quote else None,
+            'quotedNum': len(unread_message.group_quotes.all()),
+            'quotedMessages': [quote.id for quote in unread_message.group_quotes.all()],
+        } for unread_message in self.get_unread_messages()] if self.get_unread_messages() else None
         return {
             'id': self.id,
             'isKicked': self.is_kicked,
@@ -377,5 +398,5 @@ class UserGroupConversation(models.Model):
             'updatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
             'identity': self.identity,
             'unreadMessageCount': self.unread_messages_count,
-            'unreadMessage': self.get_unread_messages().serialize() if self.get_unread_messages() else None,
+            'unreadMessage': unread_messages,
         }
