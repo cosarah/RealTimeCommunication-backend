@@ -50,3 +50,4 @@ PERMISSION_DENIED = request_failed(-12, "Permission denied", 403)
 REQUEST_NOT_FOUND = request_failed(-13, "Request not found", 404)
 
 SIZE_LIMIT_EXCEEDED = request_failed(-14, "Size limit exceeded", 413)
+INVALID_JWT = request_failed(-15, "Invalid or expired JWT", 401)

@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import FriendRequest, Friendship, FriendRequestMessage, UserTag
 from conversation.models import PrivateConversation
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, ALREADY_CLOSED
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, ALREADY_CLOSED, INVALID_JWT, PERMISSION_DENIED
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -22,6 +22,16 @@ def get_friend_list(req: HttpRequest):
         user_name = req.GET.get("userName")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -44,6 +54,17 @@ def get_friend_request_list(req: HttpRequest):
         user_name = req.GET.get("userName")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -69,6 +90,17 @@ def add_friend(req: HttpRequest):
         apply_message = require(body, "message", "string", err_msg="Missing or error type of [message]")
     except:
         return BAD_PARAMS 
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -111,6 +143,16 @@ def accept_friend_request(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -138,7 +180,17 @@ def reject_friend_request(req: HttpRequest):
         friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
     except:
         return BAD_PARAMS
-        
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -165,6 +217,16 @@ def get_friend_profile(req: HttpRequest):
     except:
         return BAD_PARAMS    
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
     friendship = Friendship.objects.get(from_user=user, to_user=friend)
@@ -185,6 +247,17 @@ def fix_friend_alias(req: HttpRequest):
         alias = require(body, "alias", "string", err_msg="Missing or error type of [alias]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not validate_nick_name(alias):
         return BAD_PARAMS
 
@@ -220,6 +293,16 @@ def fix_friend_description(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     if not User.objects.filter(name=friend_name).exists():
@@ -250,6 +333,16 @@ def add_friend_tag(req: HttpRequest):
         tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -283,6 +376,16 @@ def delete_friend_tag(req: HttpRequest):
         tag = require(body, "tag", "string", err_msg="Missing or error type of [tag]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -318,6 +421,16 @@ def fix_friend_profile(req:HttpRequest):
 
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -355,6 +468,16 @@ def get_user_tag(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     
@@ -374,6 +497,16 @@ def delete_friend(req: HttpRequest):
         friend_name = require(body, "friendName", "string", err_msg="Missing or error type of [friendName]")
     except:
         return BAD_PARAMS 
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     user = User.objects.get(name=user_name)
     friend = User.objects.get(name=friend_name)
@@ -401,6 +534,16 @@ def get_user_profile(req: HttpRequest):
         info = req.GET.get("info")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     user = User.objects.get(name=user_name)
     if info == "name": # 按用户名搜索
@@ -470,6 +613,16 @@ def get_friend_all_tag_list(req: HttpRequest):
         user_name = req.GET.get("userName")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if User.objects.filter(name=user_name).exists():
         user = User.objects.get(name=user_name)

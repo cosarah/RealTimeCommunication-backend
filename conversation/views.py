@@ -6,7 +6,7 @@ from user.models import User
 from friend.models import Friendship
 from conversation.models import PrivateConversation, PrivateMessage ,GroupConversation, UserPrivateConversation, UserGroupConversation, GroupMessage, GroupConversationRequest
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED, REQUEST_NOT_FOUND, SIZE_LIMIT_EXCEEDED
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, FRIENDSHIP_NOT_FOUND, CONVERSATION_NOT_FOUND, MESSAGE_NOT_FOUND, PERMISSION_DENIED, REQUEST_NOT_FOUND, SIZE_LIMIT_EXCEEDED, INVALID_JWT
 from utils.utils_require import MAX_CHAR_LENGTH, CheckRequire, require
 from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
@@ -22,6 +22,16 @@ def get_new_conversation_list(req: HttpRequest):
         user_name = req.GET.get('userName')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -39,7 +49,7 @@ def get_new_conversation_list(req: HttpRequest):
     for group_conversation in group_conversations:
         group_conversation_list.append(group_conversation.delta_serialize())
         
-    return request_success(data={'privateConversationList': private_conversation_list,'groupConversationList': group_conversation_list, "token":generate_jwt_token(user_name)})
+    return request_success(data={'privateConversationList': private_conversation_list,'groupConversationList': group_conversation_list})
 
 ###############
 """私聊系统"""
@@ -51,6 +61,16 @@ def get_private_conversation_list(req: HttpRequest):
         user_name = req.GET.get('userName')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
@@ -73,6 +93,16 @@ def get_private_message_list(req: HttpRequest):
         friend_name = req.GET.get('friendName')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
@@ -108,6 +138,16 @@ def get_user_private_message_list(req: HttpRequest):
         friend_name = req.GET.get('friendName')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
@@ -152,6 +192,16 @@ def send_private_message(req: HttpRequest):
 
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if len(message_text) > MAX_CHAR_LENGTH:
         return SIZE_LIMIT_EXCEEDED
@@ -223,6 +273,16 @@ def delete_private_message(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
     
@@ -252,6 +312,16 @@ def withdraw_private_message(req: HttpRequest):
         message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or not User.objects.filter(name=friend_name).exists():
         return USER_NOT_FOUND
@@ -287,6 +357,16 @@ def get_group_conversation_list(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     
@@ -309,6 +389,16 @@ def create_group_conversation(req: HttpRequest):
         group_members = require(body, "groupMembers", "list", err_msg="Missing or error type of [groupMembers]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if validate_nick_name(group_tilte) == False:
         return BAD_PARAMS
@@ -349,6 +439,16 @@ def delete_group_conversation(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     
@@ -376,6 +476,16 @@ def get_group_announcements(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -398,6 +508,16 @@ def get_group_message_list(req: HttpRequest):
         group_id = req.GET.get('groupId')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
@@ -429,7 +549,17 @@ def send_group_message(req: HttpRequest):
         quote_id = require(body, "quote", "string", err_msg="Missing or error type of [quoteId]")
     except:
         return BAD_PARAMS
-        
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if len(message_text) > MAX_CHAR_LENGTH:
         return SIZE_LIMIT_EXCEEDED
     
@@ -482,6 +612,15 @@ def delete_group_message(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -514,6 +653,16 @@ def withdraw_group_message(req: HttpRequest):
         message_id = require(body, "messageId", "string", err_msg="Missing or error type of [messageId]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -548,6 +697,16 @@ def set_group_title(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     
@@ -572,6 +731,16 @@ def set_announcement(req: HttpRequest):
         announcement = require(body, "announcement", "string", err_msg="Missing or error type of [announcement]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -601,6 +770,16 @@ def set_owner(req: HttpRequest):
         new_owner_name = require(body, "newOwnerName", "string", err_msg="Missing or error type of [newOwnerName]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
@@ -656,6 +835,16 @@ def add_admin(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -704,6 +893,16 @@ def remove_admin(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed:
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -748,6 +947,16 @@ def get_group_info(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     
@@ -768,6 +977,16 @@ def get_group_invitation_list(req: HttpRequest):
         group_id = req.GET.get('groupId')
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
@@ -796,6 +1015,16 @@ def invite_group_member(req: HttpRequest):
         return BAD_PARAMS
     if not validate_info_length(message):
         return SIZE_LIMIT_EXCEEDED
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if message == "":
         message = "Invite my friend."
@@ -842,6 +1071,16 @@ def accept_group_invitation(req: HttpRequest):
         invitee_name = require(body, "inviteeName", "string", err_msg="Missing or error type of [inviteeName]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
@@ -895,6 +1134,16 @@ def reject_group_invitation(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -931,6 +1180,16 @@ def add_group_member(req: HttpRequest):
         invitee_name = require(body, "inviteeName", "string", err_msg="Missing or error type of [inviteeName]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     # 判断无效用户
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
@@ -980,6 +1239,16 @@ def remove_group_member(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     user = User.objects.get(name=user_name)
@@ -1023,6 +1292,16 @@ def quit_group(req: HttpRequest):
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 无效用户
         return USER_NOT_FOUND
     
@@ -1051,7 +1330,17 @@ def fix_user_group_conversation(req: HttpRequest):
         alias = require(body, "groupAlias", "string", err_msg="Missing or error type of [alias]")
     except:
         return BAD_PARAMS
-
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed: # 存在无效用户
         return USER_NOT_FOUND
     

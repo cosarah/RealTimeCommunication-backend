@@ -4,7 +4,7 @@ from django.shortcuts import redirect
 from user.models import User
 from friend.models import FriendRequest, Friendship
 from utils.utils_request import request_failed, request_success, return_field
-from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, ALREADY_CLOSED
+from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST,ALREADY_CLOSED, INVALID_JWT, PERMISSION_DENIED
 from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
 from datetime import datetime
@@ -127,12 +127,22 @@ def register(req: HttpRequest):
 def get_user_info(req: HttpRequest):
     if req.method != "GET":
         return BAD_METHOD
-    
+
     try:
         user_name = req.GET.get('userName', None)
     except:
         return BAD_PARAMS
     
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
     if User.objects.filter(name=user_name, is_closed=True).exists():
@@ -141,10 +151,8 @@ def get_user_info(req: HttpRequest):
     # 查找数据库中对应用户，并返回其信息
     user = User.objects.get(name=user_name)
     
-    # 返回用户信息与令牌
-    return_data = user.__all_info__()
-    return_data["token"] = generate_jwt_token(user_name)
-    return request_success(return_data)
+    # 返回用户信息
+    return request_success(user.__all_info__())
 
 # 修改用户个人信息
 ### TODO:修改用户密码
@@ -182,6 +190,16 @@ def fix_user_info(req: HttpRequest):
         location = require(body, "location", "string", err_msg="Missing or error type of [location]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     # 查找数据库中对应用户，并进行修改
     if not User.objects.filter(name=user_name).exists():
@@ -241,7 +259,7 @@ def fix_user_info(req: HttpRequest):
         else:
             return request_failed(7, "Invalid location")
     user.save()
-    return request_success({"token": generate_jwt_token(user_name)})
+    return request_success()
 
 def fix_password(req: HttpRequest):
     if req.method != "POST":
@@ -253,6 +271,18 @@ def fix_password(req: HttpRequest):
         new_password = require(body, "newPassword", "string", err_msg="Missing or error type of [newPassword]")
     except:
         return request_failed(0, "Missing or error type of [userName]", 400)
+
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
 
     if not validate_password(new_password):
         return request_failed(1, "Invalid password", 400)
@@ -268,7 +298,7 @@ def fix_password(req: HttpRequest):
         hashed_password = hashed.decode('utf-8')
         user.password = hashed_password
         user.save()
-        return request_success({"token": generate_jwt_token(user_name)})
+        return request_success()
     else:
         return request_failed(2, "Wrong password", 401)
 
@@ -283,6 +313,18 @@ def fix_portrait(req: HttpRequest):
     except:
         return BAD_PARAMS
 
+
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
+    
+
     if not User.objects.filter(name=user_name).exists() or User.objects.get(name=user_name).is_closed == True:
         return USER_NOT_FOUND
     
@@ -296,7 +338,7 @@ def fix_portrait(req: HttpRequest):
             return BAD_PARAMS
         user.portrait = portrait_code
     user.save()
-    return request_success({"token": generate_jwt_token(user_name), "portraitType": portrait_type, "portraitCode": portrait_code})
+    return request_success({"portraitType": portrait_type, "portraitCode": portrait_code})
 
 # 注销
 @CheckRequire
@@ -308,6 +350,16 @@ def close(request: HttpRequest):
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = request.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
@@ -328,6 +380,16 @@ def logout(req: HttpRequest):
         user_name = require(body, "userName", "string", err_msg="Missing or error type of [userName]")
     except:
         return BAD_PARAMS
+    
+    # 核验身份信息
+    jwt_token = req.headers.get("Authorization")
+    user_name_jwt = check_jwt_token(jwt_token)
+    if user_name_jwt is None:
+        return INVALID_JWT
+    else:
+        user_name_jwt = user_name_jwt["username"]
+    if user_name_jwt != user_name:
+        return PERMISSION_DENIED
     
     if not User.objects.filter(name=user_name).exists():
         return USER_NOT_FOUND
