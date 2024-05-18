@@ -5,7 +5,7 @@ from user.models import User
 from friend.models import FriendRequest, Friendship
 from utils.utils_request import request_failed, request_success, return_field
 from utils.utils_request import BAD_METHOD, BAD_PARAMS, USER_NOT_FOUND, ALREADY_EXIST, CREATE_SUCCESS, DELETE_SUCCESS, UPDATE_SUCCESS, ALREADY_CLOSED
-from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH, MAX_INFO_LENGTH
+from utils.utils_require import  CheckRequire, require, MAX_CHAR_LENGTH, MAX_NAME_LENGTH, MAX_INFO_LENGTH
 from utils.utils_time import get_timestamp
 from datetime import datetime
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
