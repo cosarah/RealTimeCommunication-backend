@@ -160,20 +160,21 @@ class InfoTests(TestCase):
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
         }
+        self.token = generate_jwt_token("Ashitemaru")
 
     def test_get_info_with_bad_method(self):
 
-        res = self.client.post('/user', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.post('/user', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
 
-        res = self.client.put('/user', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.put('/user', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
 
-        res = self.client.delete('/user', data=self.data, content_type='application/json', headers=self.headers)
+        res = self.client.delete('/user', data=self.data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
