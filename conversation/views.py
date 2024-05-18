@@ -12,6 +12,8 @@ from utils.utils_time import get_timestamp
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from user.views import validate_nick_name, validate_info_length
 from django.utils import timezone
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
@@ -259,6 +261,10 @@ def send_private_message(req: HttpRequest):
     user_private_conversation.add_message(message)
     user_private_conversation.save()
     private_conversation.save()
+
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(friend.username, {'type': 'notify'})
+
     return request_success({'messageId': message.id})
 
 def delete_private_message(req: HttpRequest):
@@ -596,6 +602,10 @@ def send_group_message(req: HttpRequest):
             other_member_group_conversation.unread_messages_count += 1
             other_member_group_conversation.updated_time = timezone.now()
             other_member_group_conversation.save()
+
+    channel_layer = get_channel_layer()
+    for member in group_conversation.get_all_participants():
+        async_to_sync(channel_layer.group_send)(member.username, {'type': 'notify'})
 
     return request_success({'messageId': message.id})
 
