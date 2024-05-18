@@ -125,7 +125,8 @@ class RegisterTests(TestCase):
     # ! Test section
     # * Tests for register view
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "password": "123456"}
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.data = {"userName": "Ashitemaru", "password": self.password}
 
     def test_register_with_bad_method(self):
 
@@ -147,7 +148,8 @@ class InfoTests(TestCase):
     # ! Test section
     # * Tests for info view    
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "password": "dh488dgug6"}
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.data = {"userName": "Ashitemaru", "password": self.password}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
             "Authorization": generate_jwt_token("Ashitemaru"),
@@ -235,8 +237,9 @@ class InfoTests(TestCase):
 class CloseTests(TestCase):
     # Initializer
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "password": "123456"}
-        self.user = User.objects.create(name='Ashitemaru', password='123456')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.data = {"userName": "Ashitemaru", "password": self.password}
+        self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
@@ -259,7 +262,7 @@ class CloseTests(TestCase):
         self.assertEqual(res.json()['info'], 'Bad method')
     
     def test_close_not_exist_user(self):
-        new_data = {"userName": "NewUser", "password": "123456"}
+        new_data = {"userName": "NewUser", "password": self.password}
         res = self.client.post('/user/close', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json()['code'], -12)
@@ -269,7 +272,8 @@ class CloseTests(TestCase):
 
 class LogoutTests(TestCase):
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "password": "123456"}
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.data = {"userName": "Ashitemaru", "password": self.password}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
             "Authorization": generate_jwt_token("Ashitemaru"),
@@ -300,7 +304,8 @@ class LogoutTests(TestCase):
     def test_logout_not_exist_user(self):
         """测试不存在的用户登出"""
 
-        new_data = {"userName": "NewUser", "password": "123456"}
+        new_data = self.data.copy()
+        new_data['userName'] = "NewUser"
         res = self.client.post('/logout', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
         self.assertEqual(res.status_code, 403)
         self.assertEqual(res.json()['code'], -12)
@@ -316,8 +321,10 @@ class LogoutTests(TestCase):
 
 class FixUserPasswordTests(TestCase):
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "oldPassword": "123456", "newPassword":"123456789"}
-        self.client.post('/register', data={"userName": "Ashitemaru", "password": "123456"}, content_type='application/json')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.newpassword = bcrypt.hashpw('password123456'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.data = {"userName": "Ashitemaru", "oldPassword": self.password, "newPassword":self.newpassword}
+        self.client.post('/register', data={"userName": "Ashitemaru", "password": self.password}, content_type='application/json')
         self.headers = {
             "Authorization": generate_jwt_token("Ashitemaru"),
             "Content-Type": "application/json"
