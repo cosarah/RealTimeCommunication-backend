@@ -47,7 +47,7 @@ class ValidateFunctionsTestCase(TestCase):
 class UserTestCase(TestCase):
 
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
         self.user = User.objects.create(
             name='TestUser',
             password=self.password,
@@ -125,7 +125,7 @@ class RegisterTests(TestCase):
     # ! Test section
     # * Tests for register view
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
         self.data = {"userName": "Ashitemaru", "password": self.password}
 
     def test_register_with_bad_method(self):
@@ -148,7 +148,7 @@ class InfoTests(TestCase):
     # ! Test section
     # * Tests for info view    
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
         self.data = {"userName": "Ashitemaru", "password": self.password}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
@@ -237,7 +237,7 @@ class InfoTests(TestCase):
 class CloseTests(TestCase):
     # Initializer
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
         self.data = {"userName": "Ashitemaru", "password": self.password}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
@@ -272,7 +272,7 @@ class CloseTests(TestCase):
 
 class LogoutTests(TestCase):
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
         self.data = {"userName": "Ashitemaru", "password": self.password}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
@@ -321,8 +321,8 @@ class LogoutTests(TestCase):
 
 class FixUserPasswordTests(TestCase):
     def setUp(self):
-        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        self.newpassword = bcrypt.hashpw('password123456'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
+        self.newpassword = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[3:15]
         self.data = {"userName": "Ashitemaru", "oldPassword": self.password, "newPassword":self.newpassword}
         self.client.post('/register', data={"userName": "Ashitemaru", "password": self.password}, content_type='application/json')
         self.headers = {
