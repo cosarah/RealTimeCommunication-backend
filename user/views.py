@@ -35,12 +35,16 @@ def validate_password(password):
     return re.match(r'^[a-zA-Z0-9_-]{3,16}$', password)
 
 def validate_phone(phone):
+    if len(phone) > 11:
+        return False
     # 期望的电话号码格式为以1开头的11位数字
     return re.match(r'^1\d{10}$', phone)
 
 def validate_email(email):
     # var: 单词字符、点、连字符、下划线
     # 简单的电子邮件格式验证：var@var.var
+    if len(email) > 25:
+        return False
     return re.match(r'^[\w\.-]+@[\w\.-]+\.\w+$', email)
 
 def validate_birthday(birthday):
