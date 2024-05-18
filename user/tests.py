@@ -1,14 +1,7 @@
-import random
-from django.test import TestCase, Client
+from django.test import TestCase
 from user.models import User
-import datetime
-import hashlib
-import hmac
-import time
-import json
-import base64
-from utils.utils_jwt import generate_jwt_token, check_jwt_token
-from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
+from django.conf import settings
+from utils.utils_jwt import generate_jwt_token
 from user.views import validate_age, validate_email, validate_phone, validate_name, validate_password, validate_birthday, validate_gender_type, validate_info_length, validate_info_length, validate_portrait_type
 import bcrypt
 
@@ -54,10 +47,10 @@ class ValidateFunctionsTestCase(TestCase):
 class UserTestCase(TestCase):
 
     def setUp(self):
-
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         self.user = User.objects.create(
             name='TestUser',
-            password='password123',
+            password=self.password,
             email='test@example.com',
             phone='12345678901'
         )
@@ -65,7 +58,7 @@ class UserTestCase(TestCase):
     def test_user_creation(self):
         """测试 User 模型对象的创建是否成功"""
         self.assertEqual(self.user.name, 'TestUser')
-        self.assertTrue(self.user.password, 'password123')
+        self.assertTrue(self.user.password, self.password)
         self.assertFalse(self.user.is_online)
         self.assertEqual(self.user.email, 'test@example.com')
         self.assertEqual(self.user.phone, '12345678901')
@@ -90,30 +83,31 @@ class LoginTests(TestCase):
     # Initializer
     # ! Test section
     # * Tests for login view
+    def setUp(self):
+        self.password = getattr(settings, 'DEFAULT_USER_PASSWORD', 'default_password')[:15]
+        self.data = {"userName": "Ashitemaru", "password": self.password}
+        self.user = self.client.post('/register', data=self.data, content_type='application/json')
+    
     def test_login_existing_user_correct_password(self):
-
-        data = {"userName": "Ashitemaru", "password": "123456"}
-        res = self.client.post('/register', data=data, content_type='application/json')
-        res = self.client.post('/login', data=data, content_type='application/json')
+        res = self.client.post('/login', data=self.data, content_type='application/json')
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.json()['code'], 0)
         self.assertEqual(res.json()['info'], 'Succeed')
         self.assertTrue(res.json()['token'].count('.') == 2)
 
     def test_login_existing_user_wrong_password(self):
-
-        right_data = {"userName": "Ashitemaru", "password": "rightpassword"}
-        wrong_data = {"userName": "Ashitemaru", "password": "wrongpassword"}
-        res = self.client.post('/register', data=right_data, content_type='application/json')
+        
+        wrong_data = self.data.copy()
+        wrong_data['password'] = bcrypt.hashpw('wrong_password'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         res = self.client.post('/login', data=wrong_data, content_type='application/json')
         self.assertEqual(res.status_code, 401)
         self.assertEqual(res.json()['code'], 2)
         self.assertEqual(res.json()['info'], 'Wrong password')
 
     def test_login_unregistered_user(self):
-
-        data = {"userName": "NewUser", "password": "123456"}
-        res = self.client.post('/login', data=data, content_type='application/json')
+        wrong_data = self.data.copy()
+        wrong_data['userName'] = 'UnregisteredUser'
+        res = self.client.post('/login', data=wrong_data, content_type='application/json')
         self.assertEqual(res.status_code, 404)
         self.assertEqual(res.json()['code'], -5)
         self.assertEqual(res.json()['info'], 'User not found')
@@ -121,8 +115,7 @@ class LoginTests(TestCase):
 
     def test_login_with_bad_method(self):
 
-        data = {"userName": "Ashitemaru", "password": "123456"}
-        res = self.client.get('/login', data=data, content_type='application/json')
+        res = self.client.get('/login', data=self.data, content_type='application/json')
         self.assertEqual(res.status_code, 405)
         self.assertEqual(res.json()['code'], -3)
         self.assertEqual(res.json()['info'], 'Bad method')
@@ -154,7 +147,7 @@ class InfoTests(TestCase):
     # ! Test section
     # * Tests for info view    
     def setUp(self):
-        self.data = {"userName": "Ashitemaru", "password": "123456"}
+        self.data = {"userName": "Ashitemaru", "password": "dh488dgug6"}
         self.client.post('/register', data=self.data, content_type='application/json')
         self.headers = {
             "Authorization": generate_jwt_token("Ashitemaru"),
