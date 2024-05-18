@@ -263,7 +263,7 @@ def send_private_message(req: HttpRequest):
     private_conversation.save()
 
     channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(friend.username, {'type': 'notify'})
+    async_to_sync(channel_layer.group_send)(friend.name, {'type': 'notify'})
 
     return request_success({'messageId': message.id})
 
@@ -605,7 +605,7 @@ def send_group_message(req: HttpRequest):
 
     channel_layer = get_channel_layer()
     for member in group_conversation.get_all_participants():
-        async_to_sync(channel_layer.group_send)(member.username, {'type': 'notify'})
+        async_to_sync(channel_layer.group_send)(member.name, {'type': 'notify'})
 
     return request_success({'messageId': message.id})
 
