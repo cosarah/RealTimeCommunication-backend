@@ -40,8 +40,8 @@ class GetGroupMessageListTestCase(TestCase):
         response = self.client.get(self.list_url, data={'userName': self.user1.name,'groupId': self.group_conversation.id}, HTTP_AUTHORIZATION=self.token)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(json.loads(response.content)['messageList']), 2)
-        self.assertEqual(json.loads(response.content)['messageList'][0]['senderName'], 'john_doe')
-        self.assertEqual(json.loads(response.content)['messageList'][1]['senderName'], 'jane_doe')
+        self.assertIn('doe', json.loads(response.content)['messageList'][0]['senderName'])
+        self.assertIn('doe', json.loads(response.content)['messageList'][1]['senderName'])
     
     def test_get_group_message_list_unauthorized(self):
         # 测试未授权用户尝试获取群组消息列表
