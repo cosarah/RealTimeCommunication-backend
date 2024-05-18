@@ -15,7 +15,7 @@ from django.utils import timezone
 
 # Create your views here.
 # 每次返回的都是按照更新时间排序的表单
-def get_all_conversation_list(req: HttpRequest):
+def get_new_conversation_list(req: HttpRequest):
     if req.method != 'GET':
         return BAD_METHOD
     try:
@@ -28,17 +28,18 @@ def get_all_conversation_list(req: HttpRequest):
     
     user = User.objects.get(name=user_name)
 
-    private_conversations = UserPrivateConversation.objects.filter(user=user)
+    private_conversations = UserPrivateConversation.objects.filter(user=user).filter(unread_messages_count__gt=0)
     private_conversation_list = []
     for private_conversation in private_conversations:
-        private_conversation_list.append(private_conversation.serialize())
+        private_conversation_list.append(private_conversation.delta_serialize())
     
-    group_conversations = UserGroupConversation.objects.filter(user=user)
+
+    group_conversations = UserGroupConversation.objects.filter(user=user).filter(unread_messages_count__gt=0)
     group_conversation_list = []
     for group_conversation in group_conversations:
-        group_conversation_list.append(group_conversation.serialize())
-    
-    return request_success(data={'privateConversationList': private_conversation_list})
+        group_conversation_list.append(group_conversation.delta_serialize())
+        
+    return request_success(data={'privateConversationList': private_conversation_list,'groupConversationList': group_conversation_list, "token":generate_jwt_token(user_name)})
 
 ###############
 """私聊系统"""

@@ -106,6 +106,22 @@ class UserPrivateConversation(models.Model):
     def get_last_message_time(self): # 获取最后一条消息的时间
         return self.get_last_message().created_time.strftime('%Y-%m-%d %H:%M:%S')
 
+    def get_unread_messages(self): # 获取未读消息
+        return self.messages.order_by('-created_time')[:self.unread_messages_count]
+    def delta_serialize(self):
+        return {
+            'id': self.id,
+            'userName': self.user.name,
+            'friendName': self.friendship.to_user.name,
+            'friendNickName': self.friendship.to_user.nick_name,
+            'friendAlias': self.friendship.alias,
+            'friendPortraitType': self.friendship.to_user.portrait_type,
+            'friendPortraitUrl': self.friendship.to_user.portrait,
+            'friendIsOnline': self.friendship.to_user.is_online,
+            'unreadMessageCount': self.unread_messages_count,
+            'unreadMessage': self.get_unread_messages().serialize() if self.get_unread_messages() else None,
+        }
+
 class GroupMessage(models.Model):
     sender = models.ForeignKey(User, related_name='group_sender', on_delete=models.DO_NOTHING) # 用户删除之后，对应聊天记录并不删除
     text = models.CharField(max_length=MAX_CHAR_LENGTH)
@@ -348,3 +364,18 @@ class UserGroupConversation(models.Model):
     def get_messages(self):
         messages = self.messages.all().order_by('-created_time')
         return [message.serialize() for message in messages]
+    
+    def get_unread_messages(self): # 获取未读消息
+        return self.messages.order_by('-created_time')[:self.unread_messages_count]
+    def delta_serialize(self):
+        return {
+            'id': self.id,
+            'isKicked': self.is_kicked,
+            'groupName': self.group_conversation.title,
+            'userAlias': self.alias,
+            'joinTime': self.join_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'updatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'identity': self.identity,
+            'unreadMessageCount': self.unread_messages_count,
+            'unreadMessage': self.get_unread_messages().serialize() if self.get_unread_messages() else None,
+        }

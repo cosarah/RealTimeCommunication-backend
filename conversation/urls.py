@@ -3,7 +3,7 @@ from django.urls import path, include
 import conversation.views as views
 
 urlpatterns = [
-    path('', views.get_all_conversation_list), # 获取全部会话列表
+    path('', views.get_new_conversation_list), # 获取全部会话列表
 
 # 私聊系统
     path('private', views.get_private_conversation_list), # 获取私信会话列表
