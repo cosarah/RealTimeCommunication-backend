@@ -264,8 +264,7 @@ def fix_password(req: HttpRequest):
         return ALREADY_CLOSED
     if bcrypt.checkpw(old_password.encode('utf-8'), user.password.encode('utf-8')):
         # 修改密码
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(new_password.encode('utf-8'), salt)
+        hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
         hashed_password = hashed.decode('utf-8')
         user.password = hashed_password
         user.save()

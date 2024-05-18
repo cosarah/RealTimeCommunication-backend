@@ -10,6 +10,7 @@ import base64
 from utils.utils_jwt import generate_jwt_token, check_jwt_token
 from utils.utils_jwt import EXPIRE_IN_SECONDS, SALT, b64url_encode
 from user.views import validate_age, validate_email, validate_phone, validate_name, validate_password, validate_birthday, validate_gender_type, validate_info_length, validate_info_length, validate_portrait_type
+import bcrypt
 
 class ValidateFunctionsTestCase(TestCase):
 
@@ -263,7 +264,7 @@ class CloseTests(TestCase):
 class LogoutTests(TestCase):
     def setUp(self):
         self.data = {"userName": "Ashitemaru", "password": "123456"}
-        self.user = User.objects.create(name='Ashitemaru', password='123456')
+        self.client.post('/register', data=self.data, content_type='application/json')
     def test_logout(self):
         """测试用户登出"""
         res = self.client.post('/login', data=self.data, content_type='application/json')
@@ -304,7 +305,8 @@ class LogoutTests(TestCase):
 class FixUserPasswordTests(TestCase):
     def setUp(self):
         self.data = {"userName": "Ashitemaru", "oldPassword": "123456", "newPassword":"123456789"}
-        self.user = User.objects.create(name='Ashitemaru', password='123456')
+        self.client.post('/register', data={"userName": "Ashitemaru", "password": "123456"}, content_type='application/json')
+
     def test_fix_user_password(self):
         """测试修改用户密码"""
         res = self.client.post('/user/fix/password', data=self.data, content_type='application/json')
@@ -312,7 +314,7 @@ class FixUserPasswordTests(TestCase):
         self.assertEqual(res.json()['info'], 'Succeed')
 
         self.assertEqual(res.json()['code'], 0)
-        self.assertEqual(User.objects.get(name='Ashitemaru').password, self.data["newPassword"])
+        self.assertTrue(bcrypt.checkpw(self.data["newPassword"].encode('utf-8'), User.objects.get(name='Ashitemaru').password.encode('utf-8')))
 
     def test_fix_user_password_with_bad_method(self):
         """测试修改用户密码时使用错误的 HTTP 方法"""
