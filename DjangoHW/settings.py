@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'user',
     'friend',
     'conversation',
-    # 'daphne',
+    'daphne',
     'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
