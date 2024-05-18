@@ -3,13 +3,15 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship, FriendRequest, FriendRequestMessage
 from utils.utils_jwt import generate_jwt_token
+import bcrypt
 
 class FriendRequestListTest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create(name='user1', password='password')
-        self.user2 = User.objects.create(name='user2', password='password')
-        self.user3 = User.objects.create(name='user3', password='password')
-        self.user4 = User.objects.create(name='user4', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
+        self.user3 = User.objects.create(name='user3', password=self.password)
+        self.user4 = User.objects.create(name='user4', password=self.password)
         self.request1 = FriendRequest.objects.create(from_user=self.user1, to_user=self.user2)
         self.request2 = FriendRequest.objects.create(from_user=self.user2, to_user=self.user1)
         self.request3 = FriendRequest.objects.create(from_user=self.user1, to_user=self.user3)
@@ -42,8 +44,9 @@ class FriendRequestListTest(TestCase):
     
 class FriendRequestCreateTest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create(name='user1', password='password')
-        self.user2 = User.objects.create(name='user2', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         self.data = {'userName':self.user1.name,'friendName': self.user2.name, 'message':'message1' }
         self.headers = {
             "Authorization": generate_jwt_token(self.user1.name),
@@ -81,7 +84,7 @@ class FriendRequestCreateTest(TestCase):
         
     def test_create_friend_request_with_already_friend(self):
         new_data = self.data.copy()
-        new_user = User.objects.create(name='new_user', password='password')
+        new_user = User.objects.create(name='new_user', password=self.password)
         Friendship.objects.create(from_user=self.user1, to_user=new_user)
         Friendship.objects.create(from_user=new_user, to_user=self.user1)
         new_data['friendName'] = 'new_user'
@@ -100,8 +103,9 @@ class FriendRequestCreateTest(TestCase):
         
 class FriendRequestAcceptTest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create(name='user1', password='password')
-        self.user2 = User.objects.create(name='user2', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         self.request = FriendRequest.objects.create(from_user=self.user1, to_user=self.user2)
         self.data = {'userName':self.user2.name,'friendName': self.user1.name }
         self.headers = {
@@ -129,7 +133,7 @@ class FriendRequestAcceptTest(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_accept_friend_request_with_no_request(self):
-        User.objects.create(name='no_request', password='password')
+        User.objects.create(name='no_request', password=self.password)
         new_data = self.data.copy()
         new_data['friendName'] = 'no_request'
         response = self.client.post('/friend/accept/', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)
@@ -157,8 +161,9 @@ class FriendRequestAcceptTest(TestCase):
 
 class FriendRequestRejectTest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create(name='user1', password='password')
-        self.user2 = User.objects.create(name='user2', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         self.request = FriendRequest.objects.create(from_user=self.user1, to_user=self.user2)
         self.data = {'userName':self.user2.name,'friendName': self.user1.name }
         self.headers = {
@@ -184,7 +189,7 @@ class FriendRequestRejectTest(TestCase):
         self.assertEqual(json.loads(response.content)['code'], -12)
 
     def test_reject_friend_request_with_no_request(self):
-        User.objects.create(name='no_request', password='password')
+        User.objects.create(name='no_request', password=self.password)
         new_data = self.data.copy()
         new_data['friendName'] = 'no_request'
         response = self.client.post('/friend/reject/', data=new_data, content_type='application/json', HTTP_AUTHORIZATION=self.token)

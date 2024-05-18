@@ -3,12 +3,14 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship, FriendRequest, UserTag
 from utils.utils_jwt import generate_jwt_token
+import bcrypt
 
 class FriendProfileFixTestCase(TestCase):
     def setUp(self):
         # 设置测试用户和朋友
-        self.user1 = User.objects.create(name='john_doe', password='password')
-        self.user2 = User.objects.create(name='jane_doe', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='john_doe', password=self.password)
+        self.user2 = User.objects.create(name='jane_doe', password=self.password)
         self.friendship = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.user_tag = UserTag.objects.create(user=self.user1,  name='CollegeBuddy')
         self.user_tag.friendships.set([self.friendship])
@@ -84,8 +86,9 @@ class FriendProfileFixTestCase(TestCase):
 class FriendProfileFixAliasTestCase(TestCase):
     def setUp(self):
         # 设置测试用户和朋友
-        self.user1 = User.objects.create(name='john_doe', password='password')
-        self.user2 = User.objects.create(name='jane_doe', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='john_doe', password=self.password)
+        self.user2 = User.objects.create(name='jane_doe', password=self.password)
         self.friendship = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.user_tag = UserTag.objects.create(user=self.user1,  name='CollegeBuddy')
         self.user_tag.friendships.set([self.friendship])
@@ -138,8 +141,9 @@ class FriendProfileFixAliasTestCase(TestCase):
 class FriendProfileFixDescriptionTestCase(TestCase):
     def setUp(self):
         # 设置测试用户和朋友
-        self.user1 = User.objects.create(name='john_doe', password='password')
-        self.user2 = User.objects.create(name='jane_doe', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='john_doe', password=self.password)
+        self.user2 = User.objects.create(name='jane_doe', password=self.password)
         self.friendship = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.user_tag = UserTag.objects.create(user=self.user1,  name='CollegeBuddy')
         self.user_tag.friendships.set([self.friendship])
@@ -192,8 +196,9 @@ class FriendProfileFixDescriptionTestCase(TestCase):
 class FriendProfileFixTagAddTestCase(TestCase):
     def setUp(self):
         # 设置测试用户和朋友
-        self.user1 = User.objects.create(name='john_doe', password='password')
-        self.user2 = User.objects.create(name='jane_doe', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='john_doe', password=self.password)
+        self.user2 = User.objects.create(name='jane_doe', password=self.password)
         self.friendship = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.user_tag = UserTag.objects.create(user=self.user1,  name='CollegeBuddy')
         self.user_tag.friendships.set([self.friendship])
@@ -288,8 +293,9 @@ class FriendProfileFixTagAddTestCase(TestCase):
 class FriendProfileFixTagDeleteTestCase(TestCase):
     def setUp(self):
         # 设置测试用户和朋友
-        self.user1 = User.objects.create(name='john_doe', password='password')
-        self.user2 = User.objects.create(name='jane_doe', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='john_doe', password=self.password)
+        self.user2 = User.objects.create(name='jane_doe', password=self.password)
         self.friendship = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.user_tag = UserTag.objects.create(user=self.user1,  name='CollegeBuddy')
         self.user_tag.friendships.set([self.friendship])

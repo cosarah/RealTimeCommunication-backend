@@ -2,12 +2,14 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship, FriendRequest, FriendRequestMessage, UserTag
 from django.utils import timezone
+import bcrypt
 
 class FriendRequestTestCase(TestCase):
     def setUp(self):
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Create two users
-        self.user1 = User.objects.create(name='user1', password='12345')
-        self.user2 = User.objects.create(name='user2', password='12345')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         # Create a friend request from user1 to user2
         self.friend_request = FriendRequest.objects.create(
             from_user=self.user1,
@@ -58,9 +60,10 @@ class FriendRequestTestCase(TestCase):
 
 class FriendshipTestCase(TestCase):
     def setUp(self):
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Create two users
-        self.user1 = User.objects.create(name='user1', password='12345')
-        self.user2 = User.objects.create(name='user2', password='12345')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         # Create a friendship between user1 and user2
         self.friendship = Friendship.objects.create(
             from_user=self.user1,
@@ -78,9 +81,10 @@ class FriendshipTestCase(TestCase):
 
 class FriendRequestMessageTestCase(TestCase):
     def setUp(self):
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Create two users
-        self.user1 = User.objects.create(name='user1', password='12345')
-        self.user2 = User.objects.create(name='user2', password='12345')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         # Create a friend request from user1 to user2
         self.friend_request = FriendRequest.objects.create(
             from_user=self.user1,
@@ -101,9 +105,10 @@ class FriendRequestMessageTestCase(TestCase):
 
 class UserTagTestCase(TestCase):
     def setUp(self):
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         # Create two users
-        self.user1 = User.objects.create(name='user1', password='12345')
-        self.user2 = User.objects.create(name='user2', password='12345')
+        self.user1 = User.objects.create(name='user1', password=self.password)
+        self.user2 = User.objects.create(name='user2', password=self.password)
         # Create a friendship between user1 and user2
         self.friendship = Friendship.objects.create(
             from_user=self.user1,

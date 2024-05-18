@@ -3,12 +3,14 @@ from django.test import TestCase
 from user.models import User
 from friend.models import Friendship
 from utils.utils_jwt import generate_jwt_token
+import bcrypt
 
 class FriendDeleteTest(TestCase):
 
     def setUp(self):
-        self.user1 = User.objects.create(name='test1', password='password')
-        self.user2 = User.objects.create(name='test2', password='password')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='test1', password=self.password)
+        self.user2 = User.objects.create(name='test2', password=self.password)
         self.friendship1 = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         self.friendship2 = Friendship.objects.create(from_user=self.user2, to_user=self.user1)
         self.data = {'userName':self.user1.name,'friendName': self.user2.name, 'message':'message1' }
@@ -27,9 +29,10 @@ class FriendDeleteTest(TestCase):
 class UserSearchTest(TestCase):
 
     def setUp(self):
-        self.user1 = User.objects.create(name='test1', password='password',phone='1234567890',email='xcuin@gmail.com')
-        self.user2 = User.objects.create(name='test2', password='password',phone='428967890',email='xvefsin@gmail.com')
-        self.user3 = User.objects.create(name='test3', password='password',phone='4264537890',email='xhtr42in@gmail.com')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='test1', password=self.password,phone='1234567890',email='xcuin@gmail.com')
+        self.user2 = User.objects.create(name='test2', password=self.password,phone='428967890',email='xvefsin@gmail.com')
+        self.user3 = User.objects.create(name='test3', password=self.password,phone='4264537890',email='xhtr42in@gmail.com')
         friendship1 = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         friendship2 = Friendship.objects.create(from_user=self.user2, to_user=self.user1)
         self.data1 = {'userName':self.user1.name, 'keyword': 'test2', 'info':'name'}

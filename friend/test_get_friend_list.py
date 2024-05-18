@@ -4,12 +4,15 @@ from user.models import User
 from friend.models import Friendship, FriendRequest, UserTag
 from django.utils import timezone
 from utils.utils_jwt import generate_jwt_token
+import bcrypt
+
 class TestGetFriendList(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create(name='test1', password='123456')
-        self.user2 = User.objects.create(name='test2', password='123456')
-        self.user3 = User.objects.create(name='test3', password='123456')
-        self.user4 = User.objects.create(name='test4', password='123456')
+        self.password = bcrypt.hashpw('password123'.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        self.user1 = User.objects.create(name='test1', password=self.password)
+        self.user2 = User.objects.create(name='test2', password=self.password)
+        self.user3 = User.objects.create(name='test3', password=self.password)
+        self.user4 = User.objects.create(name='test4', password=self.password)
         self.friendship1 = Friendship.objects.create(from_user=self.user1, to_user=self.user2)
         Friendship.objects.create(from_user=self.user2, to_user=self.user1)
         self.friendship2 = Friendship.objects.create(from_user=self.user1, to_user=self.user3)
