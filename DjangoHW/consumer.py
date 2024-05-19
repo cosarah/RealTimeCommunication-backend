@@ -9,7 +9,7 @@ class IMDemoConsumer(AsyncWebsocketConsumer):
 
         # 将当前 WebSocket 连接添加到一个全体用户组中
         # 这样可以确保发给这个组的所有消息都会被转发给目前连接的所有客户端
-        await self.channel_layer.group_add(self.username, self.channel_name)
+        await self.channel_layer.group_add('username'+self.username, self.channel_name)
 
         # 接受 WebSocket 连接
         await self.accept()

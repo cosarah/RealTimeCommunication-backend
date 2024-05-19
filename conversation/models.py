@@ -266,7 +266,7 @@ class GroupConversationRequest(models.Model):
             'fromUserName': self.from_user.name,
             'toUserName': self.to_user.name,
             'message': self.message,
-            'uopdatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'updatedTime': self.updated_time.strftime('%Y-%m-%d %H:%M:%S'),
             'status': self.status,
         }
 
